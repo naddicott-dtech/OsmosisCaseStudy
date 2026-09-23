@@ -16,7 +16,16 @@ Drafted 2026-09-23. **Status (2026-09-23 evening):** slices 0–6 built as v1.0 
 - Disabled buttons now say what is missing.
 - The answer check blocks only obvious filler; length and topic words are tips. This follows Neal's worry about false negatives.
 
-Open question: whether the runner transfer case previews the performance task too closely. The proposed alternative is a reverse-direction case (hypernatremia from drinking seawater).
+**Runner case:** hidden (decided 2026-09-23) because it previews the performance task too closely.
+
+**Next extension idea (Neal, 2026-09-23): salmon osmoregulation.** A salmon hatches in fresh water, where its body is saltier than the water: water floods in, so it makes lots of dilute urine and its gills actively pull in salt. As a smolt it moves to the ocean, where its body is less salty than the water: water leaks out, so it drinks seawater and its gill ionocytes pump salt OUT using Na⁺/K⁺-ATPase. As an adult it returns to fresh water to spawn and switches back.
+
+Why it works:
+- It tests transfer in BOTH directions and adds active transport, without previewing the runner performance task.
+- It could reuse the membrane world with a pump route.
+- It could work as an extension or make-up activity.
+
+Note: hypernatremia in runners is real (dehydration and weight loss, especially in multistage ultramarathons), but it would sit too close to the performance task as well.
 
 Neal's decisions: patient name Juniper is fine; water potential is required for Honors and optional for everyone else; reference ranges and the correction limit are OK.
 
