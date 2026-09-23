@@ -1,39 +1,11 @@
 import { useState } from 'preact/hooks';
-import { CHAIN_CARDS, type ChainCard } from '../../content/case';
+import { cardById, evaluateChain, type ChainFeedback } from '../../chain';
 import { saved, update, goTo } from '../../state';
 import { Prompt, answered } from '../widgets';
 
 // Fixed shuffled order so every student sees the same bank (and reloads stay stable).
-const BANK_ORDER = ['c4', 'd2', 'c1', 'c6', 'd1', 'c3', 'd4', 'c5', 'd3', 'c2'];
-const byId = (id: string) => CHAIN_CARDS.find((c) => c.id === id) as ChainCard;
-const CORRECT = CHAIN_CARDS.filter((c) => c.order >= 0).sort((a, b) => a.order - b.order).map((c) => c.id);
-
-export interface ChainFeedback {
-  ok: boolean;
-  messages: string[];
-  wrongIndex: number | null;
-}
-
-export function evaluateChain(chain: string[]): ChainFeedback {
-  const distractors = chain.map(byId).filter((c) => c.order < 0);
-  if (distractors.length) {
-    return { ok: false, messages: distractors.map((d) => `“${d.text}” — ${d.misconception}`), wrongIndex: null };
-  }
-  const missing = CORRECT.length - chain.length;
-  for (let i = 0; i < chain.length; i++) {
-    if (chain[i] !== CORRECT[i]) {
-      return {
-        ok: false,
-        messages: [`Link ${i + 1} is out of order. Ask yourself: does it directly cause the next link? What has to happen first?`],
-        wrongIndex: i,
-      };
-    }
-  }
-  if (missing > 0) {
-    return { ok: false, messages: [`So far so good, but your chain is missing ${missing} link${missing > 1 ? 's' : ''}. What happens next?`], wrongIndex: null };
-  }
-  return { ok: true, messages: ['Your chain is complete and in order. Every link causes the next one.'], wrongIndex: null };
-}
+const BANK_ORDER = ['c4', 'd2', 'c1', 'd5', 'c6', 'd1', 'c3', 'd4', 'c5', 'd3', 'c2'];
+const byId = cardById;
 
 export function Chain() {
   const s = saved.value;
@@ -86,7 +58,7 @@ export function Chain() {
           {chain.length === 0 && <p class="muted">Empty. Click cards in the bank to add them.</p>}
           <ol class="chain">
             {chain.map((id, i) => (
-              <li key={id} class={feedback?.wrongIndex === i ? 'wrong' : ''}>
+              <li key={id} class={feedback?.flagged.includes(i) ? 'wrong' : ''}>
                 <span class="chain-text">{byId(id).text}</span>
                 <span class="chain-actions">
                   <button id={`chain-${i}-up`} aria-label={`Move link ${i + 1} up`} disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
@@ -109,9 +81,9 @@ export function Chain() {
       </div>
       {s.chain.solved && (
         <section class="panel">
-          <Prompt id="chain_explain" minChars={40} rows={4} tag="Check"
+          <Prompt id="chain_explain" rows={4} tag="Check"
             label="Pick the ONE link in the chain that you think is most important for explaining the seizures. Explain it in your own words, as if to the farmer." />
-          <button class="primary" disabled={!answered('chain_explain', 40)} onClick={() => goTo(5)}>Treat Juniper →</button>
+          <button class="primary" disabled={!answered('chain_explain')} onClick={() => goTo(5)}>Treat Juniper →</button>
         </section>
       )}
     </div>

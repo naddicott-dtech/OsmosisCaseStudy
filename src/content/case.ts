@@ -19,10 +19,13 @@ export const PATIENT = {
   pronoun: 'she',
 };
 
+export const HISTORY_SPEAKER = 'Dana, Juniper\'s owner (first year raising a calf for 4-H)';
+
 export const HISTORY = [
-  'Juniper has had watery diarrhea for three days.',
-  'Yesterday the farmer stopped her milk and gave her buckets of plain water because she seemed so thirsty. She drank a lot.',
-  'This morning she would not stand up. Now she is lying on her side, trembling, and every few minutes her legs paddle and her head pulls back — seizures.',
+  '"Thanks for coming out so fast, Doc. We bought Juniper as a bottle calf about three weeks ago. She was doing great until Monday, when she got the scours. Runny, watery diarrhea, all over the pen."',
+  '"I read up online, and everything said the big danger with diarrhea is dehydration. So I\'ve been really on top of keeping her hydrated. I also read that you shouldn\'t give milk to a calf with diarrhea, so we stopped her bottles. I made sure she always had a big bucket of fresh, clean water. She\'s been so thirsty! I\'ve refilled that bucket five or six times since yesterday."',
+  '"Last night she was shivering, so my daughter put her old horse blanket on her and we moved her into the shed out of the wind."',
+  '"This morning she was wobbly and bumped her head on the gate trying to get up. Now she won\'t stand at all. She\'s lying on her side trembling, and every few minutes her legs paddle and her head pulls back. Is she going to be okay?"',
 ];
 
 export const EXAM_TOOLS = [
@@ -30,7 +33,7 @@ export const EXAM_TOOLS = [
     id: 'thermometer',
     label: 'Thermometer',
     icon: '🌡️',
-    finding: 'Rectal temperature 38.9 °C (typical calf range 38.5–39.5 °C). No fever.',
+    finding: 'Rectal temperature 38.9 °C (typical calf range 38.5–39.5 °C). Normal, even under the blanket.',
     flag: 'normal' as const,
   },
   {
@@ -46,6 +49,13 @@ export const EXAM_TOOLS = [
     icon: '✋',
     finding: 'A pinch of neck skin takes 4 seconds to flatten (normal under 2 s). Eyes slightly sunken. Signs of dehydration.',
     flag: 'high' as const,
+  },
+  {
+    id: 'head',
+    label: 'Head & eyes check',
+    icon: '🔦',
+    finding: 'A small scrape above her left eye. No swelling, no soft spots, and no blood in the ears or nose. Both pupils are the same size and react to light. Her eyes flick side to side during the seizures.',
+    flag: 'normal' as const,
   },
   {
     id: 'blood',
@@ -85,12 +95,12 @@ export interface ChainCard {
 }
 
 export const CHAIN_CARDS: ChainCard[] = [
-  { id: 'c1', order: 0, text: 'Diarrhea removes water AND sodium from the body.' },
-  { id: 'c2', order: 1, text: 'The lost fluid is replaced with plain water, which has no sodium.' },
+  { id: 'c1', order: 0, text: 'Diarrhea removes both water AND sodium from Juniper\'s body.' },
+  { id: 'c2', order: 1, text: 'Trying to rehydrate her, the owner replaces the lost fluid with plain water, which has no sodium, and stops her milk.' },
   { id: 'c3', order: 2, text: 'Blood sodium falls, so blood becomes hypotonic (less concentrated than the inside of brain cells).' },
-  { id: 'c4', order: 3, text: 'By osmosis, water moves out of the blood into brain cells through aquaporins.' },
+  { id: 'c4', order: 3, text: 'By osmosis, water moves out of the blood and into brain cells, across the membrane and through aquaporins.' },
   { id: 'c5', order: 4, text: 'Brain cells swell, and pressure inside the skull rises.' },
-  { id: 'c6', order: 5, text: 'Squeezed, swollen neurons fire abnormally → tremors and seizures.' },
+  { id: 'c6', order: 5, text: 'Squeezed, swollen neurons fire abnormally, causing tremors and seizures.' },
   {
     id: 'd1', order: -1,
     text: 'Sodium ions move from the blood into the brain.',
@@ -104,12 +114,17 @@ export const CHAIN_CARDS: ChainCard[] = [
   {
     id: 'd3', order: -1,
     text: 'Water moves toward the side that already has more water.',
-    misconception: 'Reversed. Net water movement is toward the side with more solute (and therefore less free water).',
+    misconception: 'Reversed. Net water movement is toward the side with more solute (and so fewer water molecules in the same space).',
   },
   {
     id: 'd4', order: -1,
-    text: 'A high fever damages the brain.',
-    misconception: 'Evidence check: Juniper\'s temperature was 38.9 °C, which is normal for a calf. Your chain should match the data.',
+    text: 'The horse blanket made her overheat, and the heat damaged her brain.',
+    misconception: 'Evidence check: her temperature was 38.9 °C, normal for a calf, even under the blanket. Your chain should match the data.',
+  },
+  {
+    id: 'd5', order: -1,
+    text: 'Bumping her head on the gate caused bleeding and swelling in her brain.',
+    misconception: 'Evidence check: the head exam found only a small scrape, with no swelling and equal pupils. She was already wobbly BEFORE the bump. The bump was a result of her illness, not the cause.',
   },
 ];
 
@@ -189,11 +204,11 @@ export const RUNNER = {
 };
 
 export const INTAKE_PROMPT =
-  'Before running any tests: what do you think could be causing Juniper\'s trembling and seizures? What would you want to check first, and why?';
+  'Before running any tests: list TWO possible causes of Juniper\'s trembling and seizures. For each one, what evidence would help you tell whether it is right?';
 
 export const LAB_PROMPTS = [
   { id: 'labs_systems', label: 'Which body systems look like they are still working normally, based on the evidence? Name at least one, and say which measurement supports it.' },
-  { id: 'labs_link', label: 'Juniper had diarrhea and then drank lots of plain water. Which abnormal value do you think is most connected to her seizures? Why?' },
+  { id: 'labs_link', label: 'Which abnormal value do you think is most connected to her seizures? Use something from Dana\'s story to explain why.' },
 ];
 
 export const BRAIN_EXPLAIN = {
@@ -211,7 +226,7 @@ export const REFLECT_PROMPT = {
 export const MINILAB_PROMPTS = {
   membrane: {
     id: 'lab_membrane',
-    label: 'Put sodium on one side with the aquaporin membrane. What happened to the water levels? Then switch to "leaky". Why does the result change?',
+    label: 'Start with "Salt water | Pure water" and bilayer + aquaporins. Which side gained water, and why, if every water molecule moves at random? Then compare "Lipid bilayer only" and "Leaky". What changed, and why?',
   },
   cell: {
     id: 'lab_cell',
@@ -219,6 +234,6 @@ export const MINILAB_PROMPTS = {
   },
   psi: {
     id: 'lab_psi',
-    label: '(Extension) Use your water potential values to explain which way water moves between Juniper\'s blood and her brain cells.',
+    label: 'Use your water potential values to explain which way water moves between Juniper\'s blood and her brain cells.',
   },
 };

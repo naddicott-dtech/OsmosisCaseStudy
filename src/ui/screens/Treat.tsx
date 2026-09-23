@@ -6,7 +6,8 @@ import {
 } from '../../engine/physiology';
 import { saved, update, goTo, type TreatmentLog } from '../../state';
 import { BrainCanvas } from '../BrainCanvas';
-import { Calf, CALF_LABEL } from '../Calf';
+import { Calf, CALF_LABEL, type IVState } from '../Calf';
+import { assessAnswer, RULES } from '../../quality';
 import { ActivityTrace, LineChart, PressureGauge, Prompt, Readout, answered, naTone } from '../widgets';
 
 const VOLUMES = [0.25, 0.5, 1, 2];
@@ -33,7 +34,8 @@ export function Treat() {
   const [result, setResult] = useState<{ outcome: Outcome; hemolysis: boolean } | null>(null);
   const runRef = useRef<{ before: PhysState; endAt: number; cur: PhysState } | null>(null);
 
-  const canOrder = !!fluid && !!volume && !!effect && why.trim().length >= 20 && !running;
+  const whyCheck = assessAnswer(why, RULES.treat_why);
+  const canOrder = !!fluid && !!volume && !!effect && whyCheck.ok && !running;
 
   const finish = (after: PhysState) => {
     const run = runRef.current;
@@ -123,6 +125,15 @@ export function Treat() {
   };
 
   const shown = running ? live : patient;
+  const TINT: Record<FluidId, string> = { sterile_water: '#bfe3ff', d5w: '#cfe8c8', saline_0_9: '#9fd0f5', saline_3: '#f6c46b' };
+  const lastThisTrial = s.treatments.filter((t) => t.trial === s.trial).at(-1);
+  const iv: IVState | null = running && live.infusion
+    ? { label: FLUIDS[live.infusion.fluid].short, remaining: 1 - live.infusion.deliveredL / live.infusion.volumeL, running: true, tint: TINT[live.infusion.fluid] }
+    : running && runRef.current
+      ? { label: FLUIDS[fluid as FluidId].short, remaining: 0, running: false, tint: TINT[fluid as FluidId] }
+      : lastThisTrial
+        ? { label: FLUIDS[lastThisTrial.fluid].short, remaining: 0, running: false, tint: TINT[lastThisTrial.fluid] }
+        : null;
   const trialLogs = s.treatments.filter((t) => t.trial === s.trial);
   const anySuccess = s.treatments.some((t) => t.outcome === 'success');
   const rise = shown.maxNaSinceStart - shown.naAtTreatmentStart;
@@ -132,9 +143,9 @@ export function Treat() {
     <div class="stack">
       <div class="grid-sim">
         <section class="panel" id="treat-patient">
-          <Calf status={shown.status} reduceMotion={s.reduceMotion} />
+          <Calf status={shown.status} reduceMotion={s.reduceMotion} iv={iv} />
           <p class="status-line" aria-live="polite">{CALF_LABEL[shown.status]}</p>
-          <BrainCanvas plasmaNa={shown.plasmaNa} brainVolume={shown.brainVolume} flux={shown.flux} reduceMotion={s.reduceMotion} />
+          <BrainCanvas plasmaNa={shown.plasmaNa} brainVolume={shown.brainVolume} flux={shown.flux} reduceMotion={s.reduceMotion} compact />
         </section>
         <section class="panel">
           <h3>IV order: trial {s.trial}{trialLogs.length ? `, order ${trialLogs.length + 1}` : ''}</h3>
@@ -173,8 +184,8 @@ export function Treat() {
             <label for="treat-why" class="sr-only">Explain your prediction</label>
             <textarea id="treat-why" rows={2} placeholder="Because…" value={why}
               onInput={(ev) => setWhy((ev.target as HTMLTextAreaElement).value)} />
-            <small class={why.trim().length >= 20 ? 'hint ok' : 'hint'}>
-              {why.trim().length >= 20 ? 'Ready.' : `Explain your reasoning (${why.trim().length}/20 characters).`}
+            <small class={whyCheck.ok ? 'hint ok' : 'hint'}>
+              {why.trim() ? (whyCheck.ok ? 'Ready.' : whyCheck.hint) : 'Explain your reasoning in a sentence.'}
             </small>
           </fieldset>
           <div class="row">
@@ -246,9 +257,9 @@ export function Treat() {
 
       {(anySuccess || s.treatments.length >= 3) && (
         <section class="panel">
-          <Prompt id={REFLECT_PROMPT.id} label={REFLECT_PROMPT.label} minChars={40} rows={4} tag="Check" />
+          <Prompt id={REFLECT_PROMPT.id} label={REFLECT_PROMPT.label} rows={4} tag="Check" />
           {!anySuccess && <p class="muted small">Tip: you haven't stopped the seizures safely yet. You can keep experimenting.</p>}
-          <button class="primary" disabled={!answered(REFLECT_PROMPT.id, 40)} onClick={() => goTo(6)}>Try a new patient: the marathon runner →</button>
+          <button class="primary" disabled={!answered(REFLECT_PROMPT.id)} onClick={() => goTo(6)}>Try a new patient: the marathon runner →</button>
         </section>
       )}
     </div>

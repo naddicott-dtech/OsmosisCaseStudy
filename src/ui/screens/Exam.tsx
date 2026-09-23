@@ -99,8 +99,8 @@ export function Exam() {
       {s.labCheck.done && (
         <section class="panel">
           <h3>Interpret the evidence</h3>
-          {LAB_PROMPTS.map((p) => <Prompt key={p.id} id={p.id} label={p.label} minChars={25} tag="Practice" />)}
-          <button class="primary" disabled={!LAB_PROMPTS.every((p) => answered(p.id, 25))} onClick={() => goTo(2)}>
+          {LAB_PROMPTS.map((p) => <Prompt key={p.id} id={p.id} label={p.label} tag="Practice" />)}
+          <button class="primary" disabled={!LAB_PROMPTS.every((p) => answered(p.id))} onClick={() => goTo(2)}>
             Look inside the brain →
           </button>
         </section>

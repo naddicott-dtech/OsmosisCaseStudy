@@ -4,6 +4,7 @@ import {
 } from './content/case';
 import { FLUIDS } from './engine/physiology';
 import type { Saved } from './state';
+import { assessAnswer, RULES } from './quality';
 
 const cardText = (id: string) => CHAIN_CARDS.find((c) => c.id === id)?.text ?? id;
 
@@ -49,7 +50,7 @@ export function buildReport(s: Saved): ReportSection[] {
       `Q: ${MINILAB_PROMPTS.membrane.label}`, `A: ${a(MINILAB_PROMPTS.membrane.id)}`,
       `Solutions observed in the cell lab: ${seen.join(', ') || 'none'}`,
       `Q: ${MINILAB_PROMPTS.cell.label}`, `A: ${a(MINILAB_PROMPTS.cell.id)}`,
-      ...(s.answers[MINILAB_PROMPTS.psi.id]?.trim() ? [`Extension Q: ${MINILAB_PROMPTS.psi.label}`, `A: ${a(MINILAB_PROMPTS.psi.id)}`] : []),
+      ...(s.honors || s.answers[MINILAB_PROMPTS.psi.id]?.trim() ? [`${s.honors ? 'Honors' : 'Optional'} Q: ${MINILAB_PROMPTS.psi.label}`, `A: ${a(MINILAB_PROMPTS.psi.id)}`] : []),
     ],
   });
 
@@ -95,7 +96,7 @@ export function buildReport(s: Saved): ReportSection[] {
 export function reportText(s: Saved): string {
   const head = [
     'OSMOSIS CASE STUDY: Juniper the calf',
-    `Started: ${new Date(s.startedAt).toLocaleString()}   Report made: ${new Date().toLocaleString()}`,
+    `Started: ${new Date(s.startedAt).toLocaleString()}   Report made: ${new Date().toLocaleString()}${s.honors ? '   (Honors)' : ''}`,
     '',
   ];
   return [...head, ...buildReport(s).flatMap((sec) => [sec.title.toUpperCase(), ...sec.lines, ''])].join('\n');
@@ -107,12 +108,12 @@ export interface Progress {
 }
 
 export function progressList(s: Saved): Progress[] {
-  const has = (id: string, n = 20) => (s.answers[id]?.trim().length ?? 0) >= n;
+  const has = (id: string) => assessAnswer(s.answers[id] ?? '', RULES[id]).ok;
   return [
     { label: 'Intake hypothesis', done: has('intake_hypothesis') },
     { label: 'Lab flags and interpretation', done: s.labCheck.done && LAB_PROMPTS.every((p) => has(p.id)) },
     { label: 'Brain simulation and explanation', done: s.brainWatched && has(BRAIN_EXPLAIN.id) },
-    { label: 'Mini-labs 1 & 2', done: has(MINILAB_PROMPTS.membrane.id) && has(MINILAB_PROMPTS.cell.id) },
+    { label: s.honors ? 'Mini-labs 1, 2 & 3 (Honors)' : 'Mini-labs 1 & 2', done: has(MINILAB_PROMPTS.membrane.id) && has(MINILAB_PROMPTS.cell.id) && (!s.honors || has(MINILAB_PROMPTS.psi.id)) },
     { label: 'Causal chain', done: s.chain.solved && has('chain_explain') },
     { label: 'Treatment and reflection', done: s.treatments.length > 0 && has(REFLECT_PROMPT.id) },
     { label: 'Runner case', done: RUNNER.questions.every((q) => has(q.id)) && !!s.runnerChoice.current },

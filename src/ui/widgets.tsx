@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import type { Status } from '../engine/physiology';
 import { MODEL } from '../engine/physiology';
 import { saved, setAnswer } from '../state';
+import { assessAnswer, RULES } from '../quality';
 
 // ---------- Pressure gauge ----------
 
@@ -190,27 +191,32 @@ export function LineChart({ series, yMin, yMax, xMax, yLabel, bands, title }: {
 
 // ---------- Written prompt bound to saved answers ----------
 
-export function Prompt({ id, label, minChars = 0, rows = 3, tag }: { id: string; label: string; minChars?: number; rows?: number; tag?: string }) {
+const promptLabels: Record<string, string> = {};
+
+/** Did the student write something that looks like real reasoning? (See quality.ts.) */
+export function answered(id: string): boolean {
+  return assessAnswer(saved.value.answers[id] ?? '', { ...RULES[id], prompt: promptLabels[id] }).ok;
+}
+
+export function Prompt({ id, label, rows = 3, tag, optional }: { id: string; label: string; rows?: number; tag?: string; optional?: boolean }) {
+  promptLabels[id] = label;
   const value = saved.value.answers[id] ?? '';
-  const short = minChars > 0 && value.trim().length < minChars;
+  const result = assessAnswer(value, { ...RULES[id], prompt: label });
+  const started = value.trim().length > 0;
   return (
     <div class="prompt">
       <label for={`q-${id}`}>
-        {tag && <span class={`purpose purpose-${tag.toLowerCase()}`}>{tag}</span>} {label}
+        {tag && <span class={`purpose purpose-${tag.toLowerCase().split(' ')[0]}`}>{tag}</span>} {label}
       </label>
       <textarea id={`q-${id}`} rows={rows} value={value}
         onInput={(e) => setAnswer(id, (e.target as HTMLTextAreaElement).value)} />
-      {minChars > 0 && (
-        <small class={short ? 'hint' : 'hint ok'} aria-live="polite">
-          {short ? `Write at least a full sentence (${value.trim().length}/${minChars} characters).` : 'Saved on this device ✓'}
+      {(!optional || started) && (
+        <small class={result.ok ? 'hint ok' : 'hint'} aria-live="polite">
+          {started || !optional ? result.hint : ''}
         </small>
       )}
     </div>
   );
-}
-
-export function answered(id: string, minChars = 20): boolean {
-  return (saved.value.answers[id] ?? '').trim().length >= minChars;
 }
 
 // ---------- Flag selector (Low / Normal / High) ----------

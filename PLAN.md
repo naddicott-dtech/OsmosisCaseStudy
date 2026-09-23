@@ -2,6 +2,15 @@
 
 Drafted 2026-09-23. **Status (2026-09-23 evening):** slices 0–6 built as v1.0 for classroom use on 2026-09-24. Analytics/Replit deferred. See README.md for usage and MODEL.md for the science. Defaults chosen by the assistant, pending Neal's review: patient named Juniper; Ψ calculator labeled optional extension; runner case is the final Check item in the report; submission by copy/download into Canvas.
 
+**Revision 2 (2026-09-23, after Neal's feedback):**
+- Rewrote the brain and membrane simulations, with water crossing the bilayer, emergent net flow, and no level jitter.
+- Fixed the causal-chain bug: a missing link was being reported as "out of order".
+- Rewrote the owner narrative with false clues.
+- Added the head exam, an answer-quality check, the IV visualization, and the Blender calf.
+- Water potential is now Honors-required.
+
+Neal's decisions: patient name Juniper is fine; water potential is required for Honors and optional for everyone else; reference ranges and the correction limit are OK.
+
 Remaining **Decision needed** items below are still open for later editions.
 
 ## 1. Purpose and fit

@@ -74,8 +74,9 @@ export function Brain() {
     <div class="stack">
       <section class="panel">
         <p class="muted">
-          Zoom in on the boundary between a tiny blood vessel (capillary) and brain tissue. Water can pass through
-          <strong> aquaporins</strong> (protein water channels). Sodium ions cannot cross this barrier quickly.
+          Zoom in on the boundary between a tiny blood vessel (capillary) and a brain cell. Water crosses this barrier
+          two ways: <strong>slowly, straight through the lipid bilayer</strong>, and <strong>quickly, through aquaporins</strong>
+          (protein water channels). Sodium and chloride ions cannot cross it quickly.
         </p>
         {!pred && (
           <fieldset class="mc">
@@ -117,7 +118,7 @@ export function Brain() {
       {(mode === 'done' || mode === 'explore') && (
         <section class="panel">
           <h3>What did you observe?</h3>
-          <Prompt id={BRAIN_EXPLAIN.id} label={BRAIN_EXPLAIN.label} minChars={40} rows={4} tag="Practice" />
+          <Prompt id={BRAIN_EXPLAIN.id} label={BRAIN_EXPLAIN.label} rows={4} tag="Practice" />
           <details class="explore" open={mode === 'explore'}>
             <summary>Explore: set the blood sodium yourself</summary>
             <p class="muted">Drag the slider to change the blood sodium. What happens at 140? At 160?</p>
@@ -131,7 +132,7 @@ export function Brain() {
             </label>
           </details>
           <div class="row">
-            <button class="primary" disabled={!answered(BRAIN_EXPLAIN.id, 40)} onClick={() => goTo(3)}>Go to the mini-labs →</button>
+            <button class="primary" disabled={!answered(BRAIN_EXPLAIN.id)} onClick={() => goTo(3)}>Go to the mini-labs →</button>
           </div>
         </section>
       )}

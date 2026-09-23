@@ -35,6 +35,7 @@ export interface Saved {
   runnerCheck: { attempts: number; firstScore: string | null; done: boolean };
   runnerChoice: { first: string | null; current: string | null };
   reduceMotion: boolean;
+  honors: boolean;
   startedAt: string;
 }
 
@@ -61,6 +62,7 @@ export function freshState(): Saved {
     runnerCheck: { attempts: 0, firstScore: null, done: false },
     runnerChoice: { first: null, current: null },
     reduceMotion: !!prefersReduced,
+    honors: false,
     startedAt: new Date().toISOString(),
   };
 }

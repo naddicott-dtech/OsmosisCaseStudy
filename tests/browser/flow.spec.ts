@@ -1,13 +1,22 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const SENTENCE = 'Water moves toward the side with more dissolved solute, so it moves into the brain cells.';
+const SENTENCE = 'Water moves toward the side with more dissolved solute, so by osmosis it moves into the brain cells and they swell.';
+const ANSWERS: Record<string, string> = {
+  intake: 'It could be low sodium from all the water she drank, or a head injury from the gate. A blood test and a head exam would help tell these apart.',
+  systems: 'Her temperature is normal and her glucose is in the normal range, so her energy supply and temperature control still work.',
+  link: 'Her sodium is very low at 110 because she drank lots of plain water after losing salt in the diarrhea.',
+  treatment: 'Hypertonic saline raises blood sodium a little, so the blood is saltier than the brain cells and water moves out of the swollen brain by osmosis.',
+  runnerChain: 'The runner drank too much plain water, so their blood sodium became diluted and hypotonic. By osmosis water moved into the brain cells, which swelled and caused confusion and a seizure.',
+  ruleout: 'Their temperature was a normal 37.4 so heat stroke is unlikely, and their glucose was 98 which is normal, so it is not low blood sugar.',
+  unknown: 'We do not know how much sodium they lost in sweat, so I would want to measure their sweat and urine sodium next.',
+};
 const shots = process.env.SHOTS === '1';
 
 async function shot(page: Page, name: string) {
   if (shots) await page.screenshot({ path: `test-results/shots/${test.info().project.name}-${name}.png`, fullPage: true });
 }
 
-async function fill(page: Page, labelPart: string | RegExp, text = SENTENCE) {
+async function fill(page: Page, labelPart: string | RegExp, text: string = SENTENCE) {
   await page.getByLabel(labelPart).fill(text);
 }
 
@@ -20,11 +29,11 @@ test('a student can complete the whole case and export a report', async ({ page,
   await page.goto('./');
   await expect(page.getByRole('heading', { name: 'Intake: meet your patient' })).toBeVisible();
   await shot(page, '1-intake');
-  await fill(page, /what do you think could be causing/i);
+  await fill(page, /list TWO possible causes/i, ANSWERS.intake);
   await page.getByRole('button', { name: /Examine Juniper/ }).click();
 
   // Exam & labs
-  for (const t of ['Thermometer', 'Stethoscope', 'Skin tent & eyes', 'Blood sample']) {
+  for (const t of ['Thermometer', 'Stethoscope', 'Skin tent & eyes', 'Head & eyes check', 'Blood sample']) {
     await page.getByRole('button', { name: new RegExp(t) }).click();
   }
   const flags: Record<string, string> = {
@@ -39,8 +48,8 @@ test('a student can complete the whole case and export a report', async ({ page,
   await page.getByRole('button', { name: 'Check my flags' }).click();
   await expect(page.getByText('All flags correct.')).toBeVisible();
   await shot(page, '2-exam');
-  await fill(page, /Which body systems look like/);
-  await fill(page, /Which abnormal value/);
+  await fill(page, /Which body systems look like/, ANSWERS.systems);
+  await fill(page, /Which abnormal value/, ANSWERS.link);
   await page.getByRole('button', { name: /Look inside the brain/ }).click();
 
   // Brain
@@ -53,11 +62,13 @@ test('a student can complete the whole case and export a report', async ({ page,
   await fill(page, /why does more water move into the brain/i);
   await page.getByRole('button', { name: /Go to the mini-labs/ }).click();
 
-  // Mini-labs
-  await page.getByRole('button', { name: '+ Na⁺' }).first().click();
-  await page.getByRole('button', { name: 'Skip ahead 20 s' }).click();
+  // Mini-labs: default preset is salt water | pure water with aquaporins.
+  await page.getByRole('button', { name: 'Skip ahead 30 s' }).click();
+  await expect(page.getByText('The LEFT side has risen.')).toBeVisible();
+  await page.getByRole('radio', { name: /Lipid bilayer only/ }).check();
+  await page.getByRole('button', { name: 'Skip ahead 30 s' }).click();
   await shot(page, '4-membrane');
-  await fill(page, /Put sodium on one side/);
+  await fill(page, /Start with "Salt water/);
   await page.getByRole('tab', { name: /Cell in a beaker/ }).click();
   const slider = page.getByRole('slider');
   await slider.fill('0.2');
@@ -69,6 +80,7 @@ test('a student can complete the whole case and export a report', async ({ page,
   await shot(page, '4-cell');
   await fill(page, /Describe what happened to the red blood cell/);
   await page.getByRole('tab', { name: /Water potential/ }).click();
+  await expect(page.getByText(/Honors: required/).first()).toBeVisible();
   await expect(page.getByText('from blood → into brain cells')).toBeVisible();
   await page.getByRole('button', { name: /Build the causal chain/ }).click();
 
@@ -77,14 +89,21 @@ test('a student can complete the whole case and export a report', async ({ page,
   await page.getByRole('button', { name: 'Check my chain' }).click();
   await expect(page.getByText(/cannot cross the blood–brain barrier quickly/)).toBeVisible();
   await page.getByRole('button', { name: 'Remove link 1' }).click();
-  for (const start of ['Diarrhea removes', 'The lost fluid', 'Blood sodium falls', 'By osmosis', 'Brain cells swell', 'Squeezed, swollen']) {
+  for (const start of ['Diarrhea removes', 'Trying to rehydrate', 'Blood sodium falls', 'By osmosis', 'Brain cells swell', 'Squeezed, swollen']) {
     await page.getByRole('button', { name: new RegExp(`^${start}`) }).click();
   }
   // Swap two links to test reordering feedback, then fix.
   await page.getByRole('button', { name: 'Move link 2 up' }).click();
   await page.getByRole('button', { name: 'Check my chain' }).click();
-  await expect(page.getByText(/Link 1 is out of order/)).toBeVisible();
+  await expect(page.getByText(/Links 1 and 2 are in the wrong order/)).toBeVisible();
   await page.getByRole('button', { name: 'Move link 1 down' }).click();
+  // Remove a middle link: must say "missing", not "out of order".
+  await page.getByRole('button', { name: 'Remove link 2' }).click();
+  await page.getByRole('button', { name: 'Check my chain' }).click();
+  await expect(page.getByText(/missing between them/)).toBeVisible();
+  await page.getByRole('button', { name: /^Trying to rehydrate her/ }).click();
+  await page.getByRole('button', { name: 'Move link 6 up' }).click();
+  for (let i = 5; i >= 3; i--) await page.getByRole('button', { name: `Move link ${i} up` }).click();
   await page.getByRole('button', { name: 'Check my chain' }).click();
   await expect(page.getByText(/Your chain is complete/)).toBeVisible();
   await shot(page, '5-chain');
@@ -96,7 +115,7 @@ test('a student can complete the whole case and export a report', async ({ page,
     await page.getByLabel(fluid).check();
     await page.getByLabel(vol, { exact: true }).check();
     await page.getByLabel(effect).check();
-    await page.getByLabel('Explain your prediction').fill('Because of the sodium concentration difference.');
+    await page.getByLabel('Explain your prediction').fill('Because the sodium concentration in the blood will change.');
     await page.getByRole('button', { name: /Start IV/ }).click();
     await page.waitForTimeout(800);
     await page.getByRole('button', { name: 'Skip to result' }).click();
@@ -106,9 +125,10 @@ test('a student can complete the whole case and export a report', async ({ page,
   await page.getByRole('button', { name: /Start a new trial/ }).click();
   await order(/Hypertonic saline/, '500 mL', /OUT of the brain/);
   await expect(page.getByRole('heading', { name: 'Seizures stop' })).toBeVisible();
+  await expect(page.locator('svg.calf .iv')).toHaveCount(1);
   await expect(page.getByText(/lying upright with her head raised/).first()).toBeVisible();
   await shot(page, '6-treat');
-  await fill(page, /Explain why the treatment that worked/);
+  await fill(page, /Explain why the treatment that worked/, ANSWERS.treatment);
   await page.getByRole('button', { name: /marathon runner/ }).click();
 
   // Runner
@@ -116,9 +136,9 @@ test('a student can complete the whole case and export a report', async ({ page,
   for (const [id, f] of Object.entries(rflags)) await page.locator(`#run-${id}-${f}`).click();
   await page.getByRole('button', { name: 'Check my flags' }).click();
   await expect(page.getByText('All flags correct.')).toBeVisible();
-  await fill(page, /Explain the chain of events/);
-  await fill(page, /Heat stroke and low blood sugar/);
-  await fill(page, /What can't these data tell us/);
+  await fill(page, /Explain the chain of events/, ANSWERS.runnerChain);
+  await fill(page, /Heat stroke and low blood sugar/, ANSWERS.ruleout);
+  await fill(page, /What can't these data tell us/, ANSWERS.unknown);
   await page.getByLabel(/A sports drink/).check();
   await expect(page.getByText(/still hypotonic to blood/)).toBeVisible();
   await page.getByLabel(/100 mL\) of 3% hypertonic saline/).check();
@@ -165,6 +185,16 @@ test('reduced motion mode renders without animation loops or errors', async ({ p
     [...document.querySelectorAll('.calf *')].filter((el) => getComputedStyle(el).animationName !== 'none').length);
   expect(animated).toBe(0);
   expect(errors).toEqual([]);
+});
+
+test('filler answers are rejected', async ({ page }) => {
+  await page.goto('./');
+  await page.getByLabel(/list TWO possible causes/i).fill('a'.repeat(120));
+  await expect(page.getByRole('button', { name: /Examine Juniper/ })).toBeDisabled();
+  await page.getByLabel(/list TWO possible causes/i).fill('asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf');
+  await expect(page.getByRole('button', { name: /Examine Juniper/ })).toBeDisabled();
+  await page.getByLabel(/list TWO possible causes/i).fill(ANSWERS.intake);
+  await expect(page.getByRole('button', { name: /Examine Juniper/ })).toBeEnabled();
 });
 
 test('no horizontal page scroll', async ({ page }) => {

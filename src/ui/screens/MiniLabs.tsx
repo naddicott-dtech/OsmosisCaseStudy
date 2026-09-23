@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { MINILAB_PROMPTS } from '../../content/case';
 import {
-  addParticles, createChamber, stepChamber, count, waterLevel, AQUAPORIN_BANDS, MEMBRANE_X,
-  type Chamber, type MembraneMode, type ParticleKind, type Side,
-} from '../../engine/chamber';
+  addOxygen, createChamber, step, count, level, top, leftFace, rightFace, recent, setMode, PRESETS, CHAMBER,
+  type World, type Mode, type Preset, type Side,
+} from '../../engine/membrane';
+import { COLORS, drawParticles, frameLoop, legendIcon, pixelRatio, renderMembrane } from '../molrender';
 import {
   nacl_mOsm, tonicity, animalCellVolume, animalCellState, plantCellVolume, plantCellState, solutePotential,
   CELL_INSIDE_mOsm, RBC_LYSIS_RELATIVE_VOLUME,
@@ -18,9 +19,10 @@ export function MiniLabs() {
   const tabs: [Tab, string][] = [
     ['membrane', '1 · Membrane chamber'],
     ['cell', '2 · Cell in a beaker'],
-    ['psi', '3 · Water potential (extension)'],
+    ['psi', '3 · Water potential (Honors)'],
   ];
-  const coreDone = answered(MINILAB_PROMPTS.membrane.id, 30) && answered(MINILAB_PROMPTS.cell.id, 30);
+  const honors = saved.value.honors;
+  const coreDone = answered(MINILAB_PROMPTS.membrane.id) && answered(MINILAB_PROMPTS.cell.id) && (!honors || answered(MINILAB_PROMPTS.psi.id));
   return (
     <div class="stack">
       <div class="tabs" role="tablist" aria-label="Mini-labs">
@@ -37,7 +39,13 @@ export function MiniLabs() {
         {tab === 'psi' && <PsiLab />}
       </div>
       <section class="panel row">
-        <p class="muted">Mini-labs 1 and 2 are required. Lab 3 is an optional extension.</p>
+        <p class="muted">
+          Mini-labs 1 and 2 are required for everyone. Lab 3 (water potential) is <strong>required for Honors</strong> and optional for everyone else.
+        </p>
+        <label class="checkbox">
+          <input type="checkbox" checked={honors} onChange={(e) => update(() => ({ honors: (e.target as HTMLInputElement).checked }))} />
+          I'm in Honors Biology
+        </label>
         <button class="primary" disabled={!coreDone} onClick={() => goTo(4)}>Build the causal chain →</button>
       </section>
     </div>
@@ -46,132 +54,164 @@ export function MiniLabs() {
 
 // ---------------- Membrane chamber ----------------
 
-const MODES: { id: MembraneMode; label: string; desc: string }[] = [
-  { id: 'bilayer', label: 'Lipid bilayer only', desc: 'Small nonpolar molecules like O₂ slip through. Water crosses only slowly. Ions are blocked.' },
-  { id: 'aquaporin', label: 'Bilayer + aquaporins', desc: 'Like a real cell membrane: aquaporin channels let water through quickly. Ions are still blocked.' },
-  { id: 'leaky', label: 'Leaky (damaged) membrane', desc: 'Large holes: everything, including Na⁺, can cross.' },
+const MODES: { id: Mode; label: string; desc: string }[] = [
+  { id: 'bilayer', label: 'Lipid bilayer only', desc: 'Water squeezes through the oily middle slowly. O₂ slips through easily. Ions are blocked.' },
+  { id: 'aquaporin', label: 'Bilayer + aquaporins', desc: 'Like a real cell: water still crosses the lipid, but aquaporin channels add fast lanes. Ions are still blocked.' },
+  { id: 'leaky', label: 'Leaky (damaged) membrane', desc: 'Holes in the membrane: ions can cross too.' },
 ];
+
+const PRESET_ORDER: Preset[] = ['salt_left', 'salt_right', 'equal_salt', 'very_salty_left', 'pure'];
+
+function tonicityWord(w: World, side: Side): string {
+  const conc = (s: Side) => w.macro.ions[s] / Math.max(1, w.macro.water[s] + w.macro.ions[s]);
+  const a = conc(side);
+  const b = conc(side === 0 ? 1 : 0);
+  if (Math.abs(a - b) < 0.012) return 'isotonic';
+  return a > b ? 'hypertonic' : 'hypotonic';
+}
 
 function MembraneLab() {
   const reduceMotion = saved.value.reduceMotion;
   const ref = useRef<HTMLCanvasElement>(null);
-  const chamber = useRef<Chamber>(createChamber(Date.now() % 100000, 50, 'aquaporin'));
-  const smooth = useRef({ left: 0.6, right: 0.6 });
-  const [mode, setMode] = useState<MembraneMode>('aquaporin');
-  const [stats, setStats] = useState(() => summarize(chamber.current));
+  const [mode, setModeState] = useState<Mode>('aquaporin');
+  const [preset, setPreset] = useState<Preset>('salt_left');
+  const world = useRef<World>(createChamber('aquaporin', 'salt_left', 7));
+  const membraneImg = useRef<ReturnType<typeof renderMembrane> | null>(null);
+  const [stats, setStats] = useState(() => summarize(world.current));
   const [running, setRunning] = useState(!reduceMotion);
+  const [fast, setFast] = useState(false);
+  const fastRef = useRef(fast);
+  fastRef.current = fast;
+  const C = CHAMBER;
+
+  const rebuildMembrane = () => {
+    const w = world.current;
+    membraneImg.current = renderMembrane({
+      lf: leftFace(w), rf: rightFace(w), y0: 0, y1: C.height, scale: 1, dpr: pixelRatio(),
+      channels: w.o.channels, gaps: w.o.gaps, showChannels: w.o.mode !== 'bilayer', showGaps: w.o.mode === 'leaky',
+    });
+  };
 
   const draw = () => {
     const canvas = ref.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
-    const W = 560;
-    const H = 300;
+    const dpr = pixelRatio();
+    const w = world.current;
     const cs = getComputedStyle(canvas);
     const col = (n: string) => cs.getPropertyValue(n).trim();
-    ctx.clearRect(0, 0, W, H);
-    const c = chamber.current;
-    for (const side of ['left', 'right'] as Side[]) {
-      const target = waterLevel(c, side);
-      smooth.current[side] += (target - smooth.current[side]) * 0.05;
-      const lvl = smooth.current[side];
-      const x0 = side === 'left' ? 0 : W * MEMBRANE_X;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const side of [0, 1] as Side[]) {
+      const x0 = side === 0 ? 0 : rightFace(w);
+      const x1 = side === 0 ? leftFace(w) : C.width;
+      const t = top(w, side);
       ctx.fillStyle = col('--water-fill');
-      ctx.fillRect(x0, H * (1 - lvl), W / 2, H * lvl);
-      ctx.strokeStyle = col('--water');
-      ctx.lineWidth = 2;
+      ctx.fillRect(x0 * dpr, t * dpr, (x1 - x0) * dpr, (C.height - t) * dpr);
+      ctx.fillStyle = col('--water');
+      ctx.fillRect(x0 * dpr, t * dpr - dpr, (x1 - x0) * dpr, 2 * dpr);
+    }
+    if (!membraneImg.current) rebuildMembrane();
+    const m = membraneImg.current!;
+    ctx.drawImage(m.canvas, m.x * dpr, m.y * dpr);
+    drawParticles(ctx, w, 1, dpr);
+    // Headcount of WATER on each side, like a tally board.
+    ctx.textAlign = 'center';
+    for (const side of [0, 1] as Side[]) {
+      const cx = side === 0 ? leftFace(w) / 2 : (rightFace(w) + C.width) / 2;
+      ctx.fillStyle = col('--ink');
+      ctx.font = `800 ${30 * dpr}px system-ui, sans-serif`;
+      ctx.fillText(String(count(w, 'water', side)), cx * dpr, 36 * dpr);
+      ctx.font = `700 ${10.5 * dpr}px system-ui, sans-serif`;
+      ctx.fillStyle = col('--muted');
+      ctx.fillText(`WATER · ${tonicityWord(w, side).toUpperCase()}`, cx * dpr, 52 * dpr);
+    }
+    // Net arrow from the last 10 s of crossings.
+    const r = recent(w, 10);
+    const net = r.toRight - r.toLeft;
+    if (Math.abs(net) >= 3) {
+      const cx = C.membraneX * dpr;
+      const y = 78 * dpr;
+      const dir = Math.sign(net);
+      ctx.strokeStyle = COLORS.glowIn;
+      ctx.fillStyle = COLORS.glowIn;
+      ctx.lineWidth = 5 * dpr;
       ctx.beginPath();
-      ctx.moveTo(x0, H * (1 - lvl));
-      ctx.lineTo(x0 + W / 2, H * (1 - lvl));
+      ctx.moveTo(cx - dir * 34 * dpr, y);
+      ctx.lineTo(cx + dir * 24 * dpr, y);
       ctx.stroke();
-    }
-    ctx.fillStyle = col('--barrier');
-    ctx.fillRect(W * MEMBRANE_X - 5, 0, 10, H);
-    if (c.mode === 'aquaporin') {
-      ctx.fillStyle = col('--channel');
-      for (const [a, b] of AQUAPORIN_BANDS) ctx.fillRect(W * MEMBRANE_X - 5, H * a, 10, H * (b - a));
-    }
-    if (c.mode === 'leaky') {
-      ctx.fillStyle = col('--water-fill');
-      for (let y = 0.1; y < 1; y += 0.12) ctx.fillRect(W * MEMBRANE_X - 5, H * y, 10, H * 0.06);
-    }
-    for (const p of c.particles) {
-      ctx.fillStyle = p.kind === 'water' ? col('--water') : p.kind === 'sodium' ? col('--sodium') : col('--oxygen');
       ctx.beginPath();
-      ctx.arc(p.x * W, p.y * H, p.kind === 'water' ? 3 : 5.5, 0, Math.PI * 2);
+      ctx.moveTo(cx + dir * 38 * dpr, y);
+      ctx.lineTo(cx + dir * 22 * dpr, y - 10 * dpr);
+      ctx.lineTo(cx + dir * 22 * dpr, y + 10 * dpr);
       ctx.fill();
-      if (p.kind !== 'water') {
-        ctx.strokeStyle = col('--ink');
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
+      ctx.font = `700 ${11 * dpr}px system-ui, sans-serif`;
+      ctx.fillText(`net ${Math.abs(net)} ${dir > 0 ? '→' : '←'}`, cx, y + 24 * dpr);
     }
   };
 
   useEffect(() => {
     const canvas = ref.current;
-    if (canvas) {
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = 560 * dpr;
-      canvas.height = 300 * dpr;
-      canvas.getContext('2d')?.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
+    if (!canvas) return;
+    const dpr = pixelRatio();
+    canvas.width = C.width * dpr;
+    canvas.height = C.height * dpr;
+    rebuildMembrane();
     draw();
   }, []);
 
   useEffect(() => {
-    if (!running) return;
-    let raf = 0;
-    let last = performance.now();
+    if (!running || !ref.current) return;
     let n = 0;
-    const loop = (now: number) => {
-      raf = requestAnimationFrame(loop);
-      if (document.hidden) { last = now; return; }
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      chamber.current = stepChamber(chamber.current, dt);
+    return frameLoop(ref.current, (dt) => {
+      const steps = fastRef.current ? 5 : 1;
+      for (let i = 0; i < steps; i++) step(world.current, dt);
       draw();
-      if (++n % 15 === 0) setStats(summarize(chamber.current));
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+      if (++n % 12 === 0) setStats(summarize(world.current));
+    });
   }, [running]);
 
   const advance = (seconds: number) => {
-    for (let i = 0; i < seconds * 30; i++) chamber.current = stepChamber(chamber.current, 1 / 30);
-    smooth.current = { left: waterLevel(chamber.current, 'left'), right: waterLevel(chamber.current, 'right') };
+    for (let i = 0; i < seconds * 20; i++) step(world.current, 1 / 20);
     draw();
-    setStats(summarize(chamber.current));
+    setStats(summarize(world.current));
   };
-
-  const add = (kind: ParticleKind, side: Side) => {
-    chamber.current = addParticles(chamber.current, kind, side, kind === 'sodium' ? 12 : 8);
+  const reset = (p: Preset = preset, m: Mode = mode) => {
+    world.current = createChamber(m, p, (Date.now() % 100000) | 0);
+    rebuildMembrane();
     draw();
-    setStats(summarize(chamber.current));
+    setStats(summarize(world.current));
   };
-  const reset = (m: MembraneMode = mode) => {
-    chamber.current = createChamber(Date.now() % 100000, 50, m);
-    smooth.current = { left: 0.6, right: 0.6 };
+  const changeMode = (m: Mode) => {
+    setModeState(m);
+    setMode(world.current, m);
+    rebuildMembrane();
     draw();
-    setStats(summarize(chamber.current));
   };
-  const changeMode = (m: MembraneMode) => {
-    setMode(m);
-    chamber.current = { ...chamber.current, mode: m };
-    draw();
+  const choosePreset = (p: Preset) => {
+    setPreset(p);
+    reset(p, mode);
   };
 
   return (
     <div class="grid-sim">
       <section class="panel">
         <h3>Membrane chamber</h3>
-        <canvas ref={ref} class="chamber" style={{ aspectRatio: '560 / 300' }} role="img"
-          aria-label={`Two chambers. Left: ${stats.lw} water, ${stats.ln} sodium, ${stats.lo} oxygen. Right: ${stats.rw} water, ${stats.rn} sodium, ${stats.ro} oxygen. ${stats.levelText}`} />
+        <div class="presets" role="group" aria-label="Starting solutions">
+          {PRESET_ORDER.map((p) => (
+            <button key={p} class={`pill ${preset === p ? 'on' : ''}`} aria-pressed={preset === p} onClick={() => choosePreset(p)}>
+              {PRESETS[p].label}
+            </button>
+          ))}
+        </div>
+        <canvas ref={ref} class="chamber" style={{ aspectRatio: `${C.width} / ${C.height}` }} role="img"
+          aria-label={`Two chambers. Left: ${stats.lw} water, ${stats.li} salt ions, level ${stats.ll}%. Right: ${stats.rw} water, ${stats.ri} salt ions, level ${stats.rl}%. ${stats.levelText}`} />
         <ul class="legend">
-          <li><span class="dot dot-water" /> water</li>
-          <li><span class="dot dot-na" /> Na⁺</li>
-          <li><span class="dot dot-o2" /> O₂</li>
-          <li><span class="swatch swatch-channel" /> aquaporin</li>
+          <li><img src={legendIcon('water')} alt="" /> water</li>
+          <li><img src={legendIcon('na')} alt="" /> Na⁺</li>
+          <li><img src={legendIcon('cl')} alt="" /> Cl⁻</li>
+          <li><img src={legendIcon('o2')} alt="" /> O₂</li>
+          <li><span class="ring" /> just crossed</li>
         </ul>
         <div class="row controls">
           {running ? (
@@ -179,9 +219,15 @@ function MembraneLab() {
           ) : (
             <button class="secondary" onClick={() => setRunning(true)}>▶ Run</button>
           )}
-          <button class="secondary" onClick={() => advance(20)}>Skip ahead 20 s</button>
+          <label class="toggle"><input type="checkbox" checked={fast} onChange={(e) => setFast((e.target as HTMLInputElement).checked)} /> Fast-forward ×5</label>
+          <button class="secondary" onClick={() => advance(30)}>Skip ahead 30 s</button>
+          <button class="ghost" onClick={() => { world.current = addOxygenTo(world.current); draw(); }}>+ O₂ on left</button>
           <button class="ghost" onClick={() => reset()}>Reset</button>
         </div>
+        <p class="fineprint">
+          Water levels show what a real solution does on average (trillions of molecules). The dots are a small sample:
+          each one wanders at random and can cross either way.
+        </p>
       </section>
       <section class="panel">
         <fieldset class="modes">
@@ -193,40 +239,46 @@ function MembraneLab() {
             </label>
           ))}
         </fieldset>
-        <div class="adders">
-          <span>Add to left:</span>
-          <button onClick={() => add('sodium', 'left')}>+ Na⁺</button>
-          <button onClick={() => add('oxygen', 'left')}>+ O₂</button>
-          <span>Add to right:</span>
-          <button onClick={() => add('sodium', 'right')}>+ Na⁺</button>
-          <button onClick={() => add('oxygen', 'right')}>+ O₂</button>
-        </div>
         <table class="counts-table">
           <thead><tr><th /><th scope="col">Left</th><th scope="col">Right</th></tr></thead>
           <tbody>
-            <tr><th scope="row">Water</th><td>{stats.lw}</td><td>{stats.rw}</td></tr>
-            <tr><th scope="row">Na⁺</th><td>{stats.ln}</td><td>{stats.rn}</td></tr>
-            <tr><th scope="row">O₂</th><td>{stats.lo}</td><td>{stats.ro}</td></tr>
-            <tr><th scope="row">Water crossings →</th><td colspan={2}>{stats.toRight} left→right · {stats.toLeft} right→left</td></tr>
+            <tr><th scope="row">Water molecules</th><td>{stats.lw}</td><td>{stats.rw}</td></tr>
+            <tr><th scope="row">Salt ions (Na⁺ + Cl⁻)</th><td>{stats.li}</td><td>{stats.ri}</td></tr>
+            <tr><th scope="row">Water level</th><td>{stats.ll}%</td><td>{stats.rl}%</td></tr>
+          </tbody>
+        </table>
+        <table class="counts-table">
+          <caption>Water crossings, last 10 s</caption>
+          <tbody>
+            <tr><th scope="row">through aquaporins</th><td>{stats.ch}</td></tr>
+            <tr><th scope="row">through the lipid bilayer</th><td>{stats.bl}</td></tr>
+            {mode === 'leaky' && <tr><th scope="row">through holes</th><td>{stats.gap}</td></tr>}
+            <tr><th scope="row">left → right</th><td>{stats.toR}</td></tr>
+            <tr><th scope="row">right → left</th><td>{stats.toL}</td></tr>
           </tbody>
         </table>
         <p class="netflow" aria-live="polite">{stats.levelText}</p>
-        <Prompt id={MINILAB_PROMPTS.membrane.id} label={MINILAB_PROMPTS.membrane.label} minChars={30} rows={4} tag="Practice" />
+        <Prompt id={MINILAB_PROMPTS.membrane.id} label={MINILAB_PROMPTS.membrane.label} rows={4} tag="Practice" />
       </section>
     </div>
   );
 }
 
-function summarize(c: Chamber) {
-  const lw = count(c, 'water', 'left');
-  const rw = count(c, 'water', 'right');
-  const diff = lw - rw;
-  const levelText = Math.abs(diff) < 6 ? 'Water levels are about equal.' : diff > 0 ? 'The LEFT side has gained water.' : 'The RIGHT side has gained water.';
+function addOxygenTo(w: World): World {
+  addOxygen(w, 0, 10);
+  return w;
+}
+
+function summarize(w: World) {
+  const r = recent(w, 10);
+  const ll = Math.round(level(w, 0) * 100);
+  const rl = Math.round(level(w, 1) * 100);
+  const levelText = Math.abs(ll - rl) < 2 ? 'The water levels are about equal.' : ll > rl ? 'The LEFT side has risen.' : 'The RIGHT side has risen.';
   return {
-    lw, rw,
-    ln: count(c, 'sodium', 'left'), rn: count(c, 'sodium', 'right'),
-    lo: count(c, 'oxygen', 'left'), ro: count(c, 'oxygen', 'right'),
-    toRight: c.crossings.toRight, toLeft: c.crossings.toLeft, levelText,
+    lw: count(w, 'water', 0), rw: count(w, 'water', 1),
+    li: count(w, 'ions', 0), ri: count(w, 'ions', 1),
+    ll, rl, levelText,
+    ch: r.channel, bl: r.bilayer, gap: r.gap, toR: r.toRight, toL: r.toLeft,
   };
 }
 
@@ -341,7 +393,7 @@ function CellLab() {
           </tbody>
         </table>
         {seenAll && <p class="good">You found all three. Now connect them to Juniper.</p>}
-        <Prompt id={MINILAB_PROMPTS.cell.id} label={MINILAB_PROMPTS.cell.label} minChars={30} rows={4} tag="Practice" />
+        <Prompt id={MINILAB_PROMPTS.cell.id} label={MINILAB_PROMPTS.cell.label} rows={4} tag="Practice" />
       </section>
     </div>
   );
@@ -365,7 +417,7 @@ function PsiLab() {
   return (
     <div class="grid2">
       <section class="panel">
-        <h3>Water potential (extension)</h3>
+        <h3>Water potential <span class="purpose purpose-extension">Honors: required · Others: optional</span></h3>
         <p>Solute potential: <strong>Ψ<sub>s</sub> = −iCRT</strong></p>
         <ul class="small">
           <li><strong>i</strong> = ionization constant (NaCl splits into 2 ions, so i = 2)</li>
@@ -389,7 +441,7 @@ function PsiLab() {
           <summary>Show one worked example</summary>
           <p class="small">Blood: Ψs = −(2)(0.110)(0.0831)(38.9 + 273.15) = {solutePotential(2, 0.11, 38.9).toFixed(2)} bar.</p>
         </details>
-        <Prompt id={MINILAB_PROMPTS.psi.id} label={MINILAB_PROMPTS.psi.label} rows={3} tag="Extension" />
+        <Prompt id={MINILAB_PROMPTS.psi.id} label={MINILAB_PROMPTS.psi.label} rows={3} tag="Honors" optional={!saved.value.honors} />
       </section>
     </div>
   );

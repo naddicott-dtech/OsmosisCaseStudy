@@ -21,7 +21,11 @@ Verified outcomes (engine tests): untreated Na 110 → seizing. 1 L D5W or steri
 - Seizures are triggered by the pressure threshold only. In reality, low sodium also changes neuron excitability directly.
 - Brain adaptation (osmolyte loss over about 48 h) is not simulated dynamically. It appears only as the overcorrection rule and its explanation.
 - Brain swelling is drawn ×4.5 so it can be seen. Particle crossings are biased by the engine's net flux, so the animation illustrates the model rather than simulating molecules.
-- The membrane-chamber mini-lab uses crossing probabilities with an osmotic bias and a back-pressure from the water height. It demonstrates behavior qualitatively.
+- **Membrane mini-lab (`src/engine/membrane.ts`):**
+  - **Two layers.** The water levels follow a macro model of the average behavior of a real solution. Water flux from each side is proportional to how crowded water is at that face of the membrane (salt takes up room, so salty water has fewer water molecules per volume) times (1 + 0.8 × level difference), the back-pressure of a taller column. Nothing sets the direction; it comes out of those rules.
+  - **The dots are a sample of about 350 molecules.** Each walks at random and crosses both ways, through aquaporins (fast) and through the lipid bilayer (slow). They are steered only enough to stay in step with the macro counts.
+  - **Why two layers:** an earlier all-particle version showed about ±3% random wander in the levels at any Chromebook-affordable particle count. That is real statistics for a few hundred molecules, but it read as broken.
+- **Brain view:** the same molecule world, but the net direction is set by the physiology engine's flux so the picture matches the gauges. Blood flows and carries Na⁺ and Cl⁻ in proportion to plasma sodium.
 - The cell-in-a-beaker lab uses Boyle–van 't Hoff (40% of cell volume doesn't change with water). Lysis begins at 160% relative volume, which lands at about 0.45% NaCl and matches the classic osmotic fragility onset.
 
 ## Lab values

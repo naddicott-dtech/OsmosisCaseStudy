@@ -4,24 +4,25 @@ An original, browser-based case study for high school Biology (Marathon Runner u
 
 **Live site:** https://naddicott-dtech.github.io/OsmosisCaseStudy/
 
-Not affiliated with ExploreLearning or any commercial product.
+Not affiliated with ExploreLearning or any commercial product. The molecule visuals were inspired by [Kodolab](https://kodolab.org). No Kodolab code or images are used.
 
 ## Classroom use (about 45–60 min)
 
 | Step | Students… | Purpose tag |
 |---|---|---|
-| 1 Intake | Read the history and write a first hypothesis | Engage |
-| 2 Exam & Labs | Use exam tools, flag 8 lab values against reference ranges, interpret | Practice |
-| 3 Inside the Brain | Predict, then watch water cross aquaporins as blood sodium falls; explain | Predict / Practice |
-| 4 Mini-labs | Membrane chamber (bilayer / aquaporins / leaky); red blood cell in a beaker (with plant-cell comparison); optional water potential calculator | Practice / Extension |
-| 5 Causal Chain | Order 6 cards and reject 4 misconception cards; explain one link | Check |
-| 6 Treatment | Choose fluid and dose, predict, observe; can overcorrect; reflect | Check |
+| 1 Intake | Read the owner's well-meaning but misguided account (with false clues: a horse blanket, a bump on the head) and propose two possible causes | Engage |
+| 2 Exam & Labs | Use exam tools (including a head check that rules out the false clue), flag 8 lab values against reference ranges, interpret | Practice |
+| 3 Inside the Brain | Predict, then watch water cross BOTH through aquaporins and straight through the lipid bilayer as blood sodium falls; live tallies of water into and out of the brain | Predict / Practice |
+| 4 Mini-labs | Membrane chamber with preset solutions (bilayer only / aquaporins / leaky), where net water flow emerges from a headcount of water at the membrane; red blood cell in a beaker (with plant-cell comparison); water potential calculator (**required for Honors, optional for others**) | Practice / Honors |
+| 5 Causal Chain | Order 6 cards and reject 5 misconception and false-clue cards; feedback distinguishes wrong order from a missing link | Check |
+| 6 Treatment | Choose fluid and dose, predict, watch the IV run, observe; can overcorrect; reflect | Check |
 | 7 Runner Case | New data, no simulation: flag values, explain collapse, rule out alternatives, choose treatment | Check (transfer) |
 | 8 Report | Copy, download, or print the report and submit to Canvas | |
 
 - **Submission:** students click **Copy report** and paste it into a Canvas text entry, or upload the downloaded `.txt`. The report records first attempts (first lab-flag score, first chain attempt, each treatment prediction, first runner treatment choice) as well as final answers.
 - **Privacy:** no accounts, analytics, or network requests. Work is saved in the student's browser (localStorage) and survives reloads on the same device. A student who switches devices starts over, so stay on one Chromebook.
 - **Accessibility:** keyboard-operable throughout (no drag-only interactions). Screen-reader labels on gauges, canvases, and charts. **Reduce motion** toggle (also follows the OS setting) stops the tremor animation, particle motion, and scrolling traces. No flashing content.
+- **Written answers** pass a local "did thinking happen?" check: real words, enough distinct words, sentences, no filler like `aaaa` or keyboard mashing, not just parroting the question, and at least one topic word. It is a speed bump, not a grader. Fluent nonsense still passes. A model-based check is planned for a later hosted (Replit) edition.
 - Steps can be revisited in any order from the step bar. In-page buttons lead students through in order.
 
 ## Development
@@ -37,6 +38,8 @@ npm run build
 Pushing to `main` deploys to GitHub Pages via `.github/workflows/pages.yml`.
 
 - `src/engine/`: pure, deterministic model code (physiology, membrane chamber, cell tonicity). No DOM.
+- `src/engine/membrane.ts`: shared molecule world (mini-lab and brain view).
+- `art/`: Blender script that renders the calf (see art/README.md). Web copies are in `public/art/`.
 - `src/content/case.ts`: all case text, lab values, chain cards, feedback. Edit wording here.
 - `src/ui/`: Preact screens and widgets. `src/report.ts` builds the student report.
 

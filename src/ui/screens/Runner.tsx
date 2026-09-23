@@ -11,7 +11,7 @@ export function Runner() {
   const nCorrect = RUNNER.labs.filter((l) => s.runnerFlags[l.id] === flagOf(l)).length;
   const choice = s.runnerChoice.current;
   const choiceObj = RUNNER.treatmentChoice.choices.find((c) => c.id === choice);
-  const writtenDone = RUNNER.questions.every((q) => answered(q.id, 40));
+  const writtenDone = RUNNER.questions.every((q) => answered(q.id));
 
   const check = () =>
     update((st) => ({
@@ -59,7 +59,7 @@ export function Runner() {
 
       <section class="panel">
         <h3><span class="purpose purpose-check">Check</span> Explain the runner's collapse</h3>
-        {RUNNER.questions.map((q) => <Prompt key={q.id} id={q.id} label={q.label} minChars={40} rows={4} />)}
+        {RUNNER.questions.map((q) => <Prompt key={q.id} id={q.id} label={q.label} rows={4} />)}
       </section>
 
       <section class="panel">
