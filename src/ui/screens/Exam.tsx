@@ -94,6 +94,7 @@ export function Exam() {
           </div>
           <div class="row">
             <button class="secondary" disabled={!allFlagged} onClick={check}>Check my flags</button>
+            {!allFlagged && <span class="gate-hint">Flag all {LABS.length} values to check.</span>}
             {checked && (
               <span aria-live="polite" class={nCorrect === LABS.length ? 'good' : 'warn'}>
                 {nCorrect === LABS.length
@@ -112,6 +113,7 @@ export function Exam() {
           <button class="primary" disabled={!LAB_PROMPTS.every((p) => answered(p.id))} onClick={() => goTo(2)}>
             Look inside the brain →
           </button>
+          {!LAB_PROMPTS.every((p) => answered(p.id)) && <p class="gate-hint">Still needed: answer both questions above.</p>}
         </section>
       )}
     </div>

@@ -9,6 +9,15 @@ Drafted 2026-09-23. **Status (2026-09-23 evening):** slices 0–6 built as v1.0 
 - Added the head exam, an answer-quality check, the IV visualization, and the Blender calf.
 - Water potential is now Honors-required.
 
+**Revision 3 (2026-09-23 evening):**
+- Seizure episodes shown from an overhead camera.
+- Exam close-up pop-ups added.
+- Treatment restructured into trials of up to 4 rounds, with a goal card, a "safe for day 1" band, reassessment after each round, automatic end on overcorrection, and a scorecard.
+- Disabled buttons now say what is missing.
+- The answer check blocks only obvious filler; length and topic words are tips. This follows Neal's worry about false negatives.
+
+Open question: whether the runner transfer case previews the performance task too closely. The proposed alternative is a reverse-direction case (hypernatremia from drinking seawater).
+
 Neal's decisions: patient name Juniper is fine; water potential is required for Honors and optional for everyone else; reference ranges and the correction limit are OK.
 
 Remaining **Decision needed** items below are still open for later editions.

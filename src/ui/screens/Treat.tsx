@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { HEMOLYSIS_TEXT, OUTCOME_TEXT, REFLECT_PROMPT, TREAT_PREDICT_LABEL } from '../../content/case';
+import { HEMOLYSIS_TEXT, OUTCOME_TEXT, REFLECT_PROMPT, TREAT_GOAL, TREAT_PREDICT_LABEL, VERDICT_TEXT } from '../../content/case';
 import {
-  FLUIDS, MODEL, classifyOutcome, createPatient, startInfusion, step,
+  FLUIDS, MAX_ROUNDS, MODEL, classifyOutcome, createPatient, startInfusion, step, trialVerdict,
   type FluidId, type Outcome, type PhysState,
 } from '../../engine/physiology';
-import { saved, update, goTo, type TreatmentLog } from '../../state';
+import { saved, update, goTo, type TreatmentLog, type TrialResult } from '../../state';
 import { BrainCanvas } from '../BrainCanvas';
 import { Calf, CALF_LABEL, type IVState } from '../Calf';
 import { assessAnswer, RULES } from '../../quality';
@@ -56,7 +56,13 @@ export function Treat() {
       icpAfter: after.icp,
       hemolysis: hemolysisNew,
     };
-    update((st) => ({ patient: after, treatments: [...st.treatments, log] }));
+    const rounds = saved.value.treatments.filter((t) => t.trial === saved.value.trial).length + 1;
+    const endedBy: TrialResult['endedBy'] | null = after.overcorrected ? 'overcorrected' : after.hemolysis ? 'student' : rounds >= MAX_ROUNDS ? 'max_rounds' : null;
+    update((st) => ({
+      patient: after,
+      treatments: [...st.treatments, log],
+      ...(endedBy ? { trialEnded: true, trialResults: [...st.trialResults, { trial: st.trial, rounds, summary: trialVerdict(after), endedBy }] } : {}),
+    }));
     setLive(after);
     setRunning(false);
     setResult({ outcome, hemolysis: hemolysisNew });
@@ -118,9 +124,15 @@ export function Treat() {
 
   const newTrial = () => {
     const fresh = createPatient();
-    update((st) => ({ patient: fresh, trial: st.trial + 1 }));
+    update((st) => ({ patient: fresh, trial: st.trial + 1, trialEnded: false }));
     setLive(fresh);
     setSeries({ na: [[0, fresh.plasmaNa]], icp: [[0, fresh.icp]] });
+    setResult(null);
+  };
+
+  const endTrial = () => {
+    const rounds = saved.value.treatments.filter((t) => t.trial === saved.value.trial).length;
+    update((st) => ({ trialEnded: true, trialResults: [...st.trialResults, { trial: st.trial, rounds, summary: trialVerdict(st.patient), endedBy: 'student' }] }));
     setResult(null);
   };
 
@@ -135,20 +147,67 @@ export function Treat() {
         ? { label: FLUIDS[lastThisTrial.fluid].short, remaining: 0, running: false, tint: TINT[lastThisTrial.fluid] }
         : null;
   const trialLogs = s.treatments.filter((t) => t.trial === s.trial);
-  const anySuccess = s.treatments.some((t) => t.outcome === 'success');
+  const round = trialLogs.length + (running ? 0 : 1);
+  const thisTrialResult = s.trialEnded ? s.trialResults.filter((r) => r.trial === s.trial).at(-1) : undefined;
+  const anySafe = s.trialResults.some((r) => r.summary.verdict === 'safe');
+  const canMoveOn = anySafe || s.trialResults.length >= 3;
+  const stableNow = shown.status === 'stable' || shown.status === 'healthy';
+  const showForm = !s.trialEnded && !result;
   const rise = shown.maxNaSinceStart - shown.naAtTreatmentStart;
   const xMax = Math.max(360, Math.ceil((series.na.at(-1)?.[0] ?? 0) / 60) * 60);
 
   return (
     <div class="stack">
+      <section class="panel goal">
+        <h3>{TREAT_GOAL.title}</h3>
+        <ul>{TREAT_GOAL.points.map((p) => <li key={p}>{p}</li>)}</ul>
+        <details>
+          <summary>How treatment works</summary>
+          <p>{TREAT_GOAL.how}</p>
+        </details>
+        <p class="small"><strong>{TREAT_GOAL.requirement}</strong>{' '}
+          {s.trialResults.length > 0 && (
+            <span>Your trials so far: {s.trialResults.map((r) => `#${r.trial} ${VERDICT_TEXT[r.summary.verdict].title.replace('Trial over: ', '')}`).join(' · ')}.</span>
+          )}
+        </p>
+      </section>
       <div class="grid-sim">
         <section class="panel" id="treat-patient">
           <Calf status={shown.status} reduceMotion={s.reduceMotion} iv={iv} />
           <p class="status-line" aria-live="polite">{CALF_LABEL[shown.status]}</p>
-          <BrainCanvas plasmaNa={shown.plasmaNa} brainVolume={shown.brainVolume} flux={shown.flux} reduceMotion={s.reduceMotion} compact />
+          <BrainCanvas plasmaNa={shown.plasmaNa} brainVolume={shown.brainVolume} flux={shown.flux} reduceMotion={s.reduceMotion} compact resetKey={s.trial * 100 + trialLogs.length} />
         </section>
         <section class="panel">
-          <h3>IV order: trial {s.trial}{trialLogs.length ? `, order ${trialLogs.length + 1}` : ''}</h3>
+          <div class="trial-head">
+            <h3>Trial {s.trial}</h3>
+            <ol class="rounds" aria-label={`Round ${Math.min(round, MAX_ROUNDS)} of ${MAX_ROUNDS}`}>
+              {Array.from({ length: MAX_ROUNDS }, (_, i) => (
+                <li key={i} class={i < trialLogs.length ? 'done' : i === trialLogs.length && !s.trialEnded ? 'now' : ''}>
+                  Round {i + 1}
+                </li>
+              ))}
+            </ol>
+          </div>
+          {thisTrialResult && <TrialScorecard r={thisTrialResult} onNew={newTrial} />}
+          {!s.trialEnded && result && (
+            <div class={`reassess outcome-${result.outcome.kind}`} role="status">
+              <h4>Round {trialLogs.length} result: {OUTCOME_TEXT[result.outcome.kind].title}</h4>
+              <p>{OUTCOME_TEXT[result.outcome.kind].body}</p>
+              {result.hemolysis && <p><strong>{HEMOLYSIS_TEXT}</strong></p>}
+              <p class="small muted">
+                Blood sodium {result.outcome.naChange >= 0 ? 'rose' : 'fell'} by {Math.abs(result.outcome.naChange).toFixed(1)} mEq/L this round
+                ({rise >= 0 ? '+' : ''}{rise.toFixed(1)} since the start of the trial). Skull pressure {result.outcome.icpChange >= 0 ? 'rose' : 'fell'} by {Math.abs(result.outcome.icpChange).toFixed(0)} mmHg.
+              </p>
+              <p><strong>Reassess:</strong> {stableNow
+                ? 'Juniper is no longer seizing. Is it time to stop? More sodium now would only bring her closer to the day-one limit.'
+                : `Juniper is still seizing. You have ${MAX_ROUNDS - trialLogs.length} round${MAX_ROUNDS - trialLogs.length === 1 ? '' : 's'} left in this trial.`}</p>
+              <div class="row">
+                <button class={stableNow ? 'secondary' : 'primary'} onClick={() => setResult(null)}>Give round {trialLogs.length + 1}</button>
+                <button class={stableNow ? 'primary' : 'secondary'} onClick={endTrial}>End trial {s.trial} here</button>
+              </div>
+            </div>
+          )}
+          {showForm && (<>
           <fieldset class="fluids" disabled={running}>
             <legend>1. Choose a fluid</legend>
             {(Object.keys(FLUIDS) as FluidId[]).map((id) => (
@@ -193,6 +252,10 @@ export function Treat() {
             {running && <button class="secondary" onClick={skip}>Skip to result</button>}
             {running && <span class="clock">Infusing and observing… {(live.timeMin / 60).toFixed(1)} h</span>}
           </div>
+          {!running && !canOrder && (
+            <p class="gate-hint">Still needed: {[!fluid && 'a fluid', !volume && 'an amount', !effect && 'a prediction', !whyCheck.ok && 'a reason for your prediction'].filter(Boolean).join(', ')}.</p>
+          )}
+          </>)}
         </section>
       </div>
 
@@ -201,7 +264,10 @@ export function Treat() {
           <div class="charts">
             <LineChart title="Blood sodium" yLabel="mEq/L" yMin={100} yMax={145} xMax={xMax}
               series={[{ label: 'Na', points: series.na, cls: 'line-na' }]}
-              bands={[{ from: 134, to: 145, cls: 'band-ok', label: 'normal' }]} />
+              bands={[
+                { from: 134, to: 145, cls: 'band-ok', label: 'normal (days later)' },
+                { from: shown.naAtTreatmentStart, to: shown.naAtTreatmentStart + MODEL.maxSafeRise24h, cls: 'band-safe', label: 'safe for day 1' },
+              ]} />
             <LineChart title="Pressure inside skull" yLabel="mmHg" yMin={0} yMax={60} xMax={xMax}
               series={[{ label: 'ICP', points: series.icp, cls: 'line-icp' }]}
               bands={[{ from: MODEL.seizeAboveICP, to: 60, cls: 'band-bad', label: 'seizures' }]} />
@@ -216,32 +282,17 @@ export function Treat() {
         </section>
       </div>
 
-      {result && (
-        <section class={`panel outcome outcome-${result.outcome.kind}`} role="status">
-          <h3>{OUTCOME_TEXT[result.outcome.kind].title}</h3>
-          <p>{OUTCOME_TEXT[result.outcome.kind].body}</p>
-          {result.hemolysis && <p><strong>{HEMOLYSIS_TEXT}</strong></p>}
-          <p class="small muted">
-            Blood sodium {result.outcome.naChange >= 0 ? 'rose' : 'fell'} by {Math.abs(result.outcome.naChange).toFixed(1)} mEq/L.
-            Skull pressure {result.outcome.icpChange >= 0 ? 'rose' : 'fell'} by {Math.abs(result.outcome.icpChange).toFixed(0)} mmHg.
-          </p>
-          <div class="row">
-            <button class="secondary" onClick={() => setResult(null)}>Give another IV order (same patient)</button>
-            <button class="ghost" onClick={newTrial}>Start a new trial with Juniper as she was at the start</button>
-          </div>
-        </section>
-      )}
-
       {s.treatments.length > 0 && (
         <section class="panel">
           <h3>Treatment log</h3>
           <div class="table-wrap">
             <table class="log">
-              <thead><tr><th scope="col">Trial</th><th scope="col">Fluid</th><th scope="col">Amount</th><th scope="col">You predicted</th><th scope="col">Na⁺ change</th><th scope="col">Result</th></tr></thead>
+              <thead><tr><th scope="col">Trial</th><th scope="col">Round</th><th scope="col">Fluid</th><th scope="col">Amount</th><th scope="col">You predicted</th><th scope="col">Na⁺ change</th><th scope="col">Result</th></tr></thead>
               <tbody>
                 {s.treatments.map((t, i) => (
                   <tr key={i}>
                     <td>{t.trial}</td>
+                    <td>{s.treatments.slice(0, i + 1).filter((u) => u.trial === t.trial).length}</td>
                     <td>{FLUIDS[t.fluid].short}</td>
                     <td>{t.volumeL < 1 ? `${t.volumeL * 1000} mL` : `${t.volumeL} L`}</td>
                     <td>{EFFECTS.find((e) => e.id === t.predictedEffect)?.text}</td>
@@ -255,13 +306,31 @@ export function Treat() {
         </section>
       )}
 
-      {(anySuccess || s.treatments.length >= 3) && (
+      {canMoveOn && (
         <section class="panel">
           <Prompt id={REFLECT_PROMPT.id} label={REFLECT_PROMPT.label} rows={4} tag="Check" />
-          {!anySuccess && <p class="muted small">Tip: you haven't stopped the seizures safely yet. You can keep experimenting.</p>}
+          {!anySafe && <p class="muted small">You haven't stabilized Juniper safely yet. You can keep trying new trials, or move on.</p>}
           <button class="primary" disabled={!answered(REFLECT_PROMPT.id)} onClick={() => goTo(6)}>Try a new patient: the marathon runner →</button>
         </section>
       )}
+    </div>
+  );
+}
+
+function TrialScorecard({ r, onNew }: { r: TrialResult; onNew: () => void }) {
+  const v = VERDICT_TEXT[r.summary.verdict];
+  const item = (ok: boolean, text: string) => <li class={ok ? 'ok' : 'bad'}><span aria-hidden="true">{ok ? '✓' : '✗'}</span> {text}</li>;
+  return (
+    <div class={`scorecard verdict-${r.summary.verdict}`} role="status">
+      <h4>Trial {r.trial}: {v.title}</h4>
+      <ul class="checks">
+        {item(r.summary.seizuresStopped, 'Seizures stopped')}
+        {item(r.summary.riseOk, `Sodium rise in the first day: ${r.summary.rise >= 0 ? '+' : ''}${r.summary.rise.toFixed(1)} mEq/L (limit about +${MODEL.maxSafeRise24h})`)}
+        {item(r.summary.noHarmfulFluid, 'No harmful fluid given')}
+      </ul>
+      <p>{v.body}</p>
+      {r.endedBy === 'max_rounds' && <p class="small muted">This trial used all {MAX_ROUNDS} rounds (about one day).</p>}
+      <button class="primary" onClick={onNew}>Start trial {r.trial + 1} with Juniper as she was at the start</button>
     </div>
   );
 }

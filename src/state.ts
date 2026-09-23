@@ -1,5 +1,5 @@
 import { signal, effect } from '@preact/signals';
-import { createPatient, type FluidId, type OutcomeKind, type PhysState } from './engine/physiology';
+import { createPatient, type FluidId, type OutcomeKind, type PhysState, type TrialSummary } from './engine/physiology';
 
 // Everything a student does is kept on this device only (localStorage). Nothing is sent anywhere.
 
@@ -17,6 +17,14 @@ export interface TreatmentLog {
   hemolysis: boolean;
 }
 
+export interface TrialResult {
+  trial: number;
+  rounds: number;
+  summary: TrialSummary;
+  /** Why the trial ended. */
+  endedBy: 'student' | 'overcorrected' | 'max_rounds';
+}
+
 export interface Saved {
   version: 1;
   step: number;
@@ -30,6 +38,8 @@ export interface Saved {
   cellSeen: { hypotonic: boolean; isotonic: boolean; hypertonic: boolean };
   treatments: TreatmentLog[];
   trial: number;
+  trialEnded: boolean;
+  trialResults: TrialResult[];
   patient: PhysState;
   runnerFlags: Record<string, 'low' | 'normal' | 'high'>;
   runnerCheck: { attempts: number; firstScore: string | null; done: boolean };
@@ -57,6 +67,8 @@ export function freshState(): Saved {
     cellSeen: { hypotonic: false, isotonic: false, hypertonic: false },
     treatments: [],
     trial: 1,
+    trialEnded: false,
+    trialResults: [],
     patient: createPatient(),
     runnerFlags: {},
     runnerCheck: { attempts: 0, firstScore: null, done: false },

@@ -12,15 +12,18 @@ describe('answer quality check', () => {
     ['repeated words', 'water water water water water water water water water water water water water water water water'],
     ['keyboard mash', 'asdf jkl qwer zxcv sdfg hjkl wert xcvb asdfgh jklqw'],
     ['too short', 'water goes in'],
-    ['no function words', 'osmosis sodium brain water cells swelling aquaporin membrane solute pressure concentration'],
     ['letter spam with spaces', 'aaa bbb ccc ddd eee fff ggg hhh iii jjj kkk lll mmm nnn ooo ppp'],
   ])('rejects %s', (_label, text) => {
     expect(assessAnswer(text, RULES.brain_explain).ok).toBe(false);
   });
-  it('requires a topic word when the prompt has keywords', () => {
+  it('a missing topic word is a gentle tip, not a block (avoid false negatives)', () => {
     const r = assessAnswer('I think that it is because of the thing that happened to her on the farm yesterday morning.', RULES.brain_explain);
-    expect(r.ok).toBe(false);
+    expect(r.ok).toBe(true);
     expect(r.hint).toMatch(/science idea/);
+  });
+  it('short but genuine answers pass', () => {
+    expect(assessAnswer('Digestive system is working normally because blood glucose is good.', RULES.labs_systems).ok).toBe(true);
+    expect(assessAnswer('Core temperature seems fine, making heat stroke unlikely.', RULES.r_ruleout).ok).toBe(true);
   });
   it('rejects an answer that only parrots the question', () => {
     const q = 'Why does more water move into the brain than out of it';

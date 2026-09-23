@@ -247,3 +247,35 @@ export const MINILAB_PROMPTS = {
     label: 'Use your water potential values to explain which way water moves between Juniper\'s blood and her brain cells.',
   },
 };
+
+// ---------- Treatment goal and trial verdicts ----------
+
+export const TREAT_GOAL = {
+  title: 'Your goal: stop the seizures safely',
+  points: [
+    'Raise blood sodium just enough to pull water back OUT of her swollen brain cells.',
+    'Keep the rise to about 10 mEq/L or less in the first day. Rising faster can damage her brain in a new way.',
+    'You do NOT need to reach normal sodium today. Vets finish that slowly over several days.',
+  ],
+  how: 'Each trial is up to 4 rounds of IV fluid, about one day. In each round you choose a fluid and an amount, predict, then watch 6 hours. After each round, reassess: give another round, or end the trial. Every new trial starts with Juniper as she was when you arrived.',
+  requirement: 'To move on: stabilize Juniper safely in one trial, or finish 3 trials.',
+};
+
+export const VERDICT_TEXT: Record<string, { title: string; body: string }> = {
+  safe: {
+    title: 'Stabilized safely',
+    body: 'Seizures stopped and her sodium rose only a little. This is what vets aim for on day one. Her sodium is still low, and it will be corrected slowly over the next few days.',
+  },
+  overcorrected: {
+    title: 'Trial over: sodium rose too fast',
+    body: 'Her seizures may have stopped, but her sodium rose more than about 10 mEq/L in the first day. After days of low sodium, her brain cells had adjusted. A fast rise now pulls too much water out of them and can damage the insulation (myelin) on neurons. The goal was never "normal sodium today."',
+  },
+  harmed: {
+    title: 'Trial over: harmful fluid',
+    body: 'Sterile water entering a vein bursts red blood cells (hemolysis). It is never given this way.',
+  },
+  not_stabilized: {
+    title: 'Not stabilized',
+    body: 'Juniper was still seizing when this trial ended. Her blood needed to become a little more concentrated to pull water out of her brain.',
+  },
+};

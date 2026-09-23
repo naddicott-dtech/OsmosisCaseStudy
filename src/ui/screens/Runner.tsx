@@ -11,7 +11,8 @@ export function Runner() {
   const nCorrect = RUNNER.labs.filter((l) => s.runnerFlags[l.id] === flagOf(l)).length;
   const choice = s.runnerChoice.current;
   const choiceObj = RUNNER.treatmentChoice.choices.find((c) => c.id === choice);
-  const writtenDone = RUNNER.questions.every((q) => answered(q.id));
+  const missingWritten = RUNNER.questions.filter((q) => !answered(q.id)).length;
+  const writtenDone = missingWritten === 0;
 
   const check = () =>
     update((st) => ({
@@ -77,7 +78,12 @@ export function Runner() {
           <p class={`callout ${choice === RUNNER.treatmentChoice.best ? 'good' : 'warn'}`} role="status">{choiceObj.feedback}</p>
         )}
         <button class="primary" disabled={!writtenDone || !choice} onClick={() => goTo(7)}>Finish and make my report →</button>
-        {!writtenDone && <p class="muted small">Answer all three written questions to continue.</p>}
+        {(!writtenDone || !choice) && (
+          <p class="gate-hint">Still needed: {[
+            missingWritten > 0 && `${missingWritten} written answer${missingWritten === 1 ? '' : 's'}`,
+            !choice && 'a treatment choice',
+          ].filter(Boolean).join(', ')}.</p>
+        )}
       </section>
     </div>
   );

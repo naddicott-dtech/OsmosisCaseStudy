@@ -47,6 +47,18 @@ export function MiniLabs() {
           I'm in Honors Biology
         </label>
         <button class="primary" disabled={!coreDone} onClick={() => goTo(4)}>Build the causal chain →</button>
+        {!coreDone && (
+          <p class="gate-hint" aria-live="polite">
+            Still needed:{' '}
+            {([
+              ['membrane', 'Lab 1 explanation', answered(MINILAB_PROMPTS.membrane.id)],
+              ['cell', 'Lab 2 explanation', answered(MINILAB_PROMPTS.cell.id)],
+              ...(honors ? [['psi', 'Lab 3 explanation (Honors)', answered(MINILAB_PROMPTS.psi.id)]] : []),
+            ] as [Tab, string, boolean][]).filter(([, , done]) => !done).map(([id, label], i) => (
+              <span key={id}>{i > 0 && ', '}<button onClick={() => { setTab(id); requestAnimationFrame(() => document.getElementById(`q-${MINILAB_PROMPTS[id].id}`)?.focus()); }}>{label}</button></span>
+            ))}
+          </p>
+        )}
       </section>
     </div>
   );

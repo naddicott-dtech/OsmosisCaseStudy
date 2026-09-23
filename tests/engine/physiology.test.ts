@@ -109,3 +109,28 @@ describe('treatments', () => {
     for (const v of [s.plasmaNa, s.brainVolume, s.icp, s.flux, s.tbwL]) expect(Number.isFinite(v)).toBe(true);
   });
 });
+
+import { trialVerdict } from '../../src/engine/physiology';
+
+describe('trial verdicts', () => {
+  const run = (orders: [FluidId, number][]) => {
+    let s = createPatient();
+    for (const [f, v] of orders) s = step(startInfusion(s, f, v), 360);
+    return trialVerdict(s);
+  };
+  it('500 mL of 3% is a safe stabilization', () => {
+    expect(run([['saline_3', 0.5]]).verdict).toBe('safe');
+  });
+  it('1 L of 3% overcorrects', () => {
+    expect(run([['saline_3', 1]]).verdict).toBe('overcorrected');
+  });
+  it('normal saline alone does not stabilize', () => {
+    expect(run([['saline_0_9', 1]]).verdict).toBe('not_stabilized');
+  });
+  it('sterile water is harmful', () => {
+    expect(run([['sterile_water', 0.25]]).verdict).toBe('harmed');
+  });
+  it('chasing normal sodium with repeated doses overcorrects', () => {
+    expect(run([['saline_3', 0.5], ['saline_3', 0.5]]).verdict).toBe('overcorrected');
+  });
+});

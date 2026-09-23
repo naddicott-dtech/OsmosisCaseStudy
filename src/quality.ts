@@ -53,37 +53,31 @@ export function tokenize(text: string): string[] {
 }
 
 export function assessAnswer(text: string, opts: QualityOptions = {}): QualityResult {
-  const minWords = opts.minWords ?? 8;
+  const target = opts.minWords ?? 8;
+  const floor = Math.min(6, target);
   const tokens = tokenize(text);
   const words = tokens.filter(looksLikeWord);
   const lower = text.toLowerCase();
+  const fail = (hint: string): QualityResult => ({ ok: false, hint, words: words.length });
+  const pass = (hint: string): QualityResult => ({ ok: true, hint, words: words.length });
 
-  if (words.length < minWords) {
-    return { ok: false, hint: `Write a bit more: at least ${minWords} real words (you have ${words.length}).`, words: words.length };
-  }
-  if (words.length < tokens.length * 0.75) {
-    return { ok: false, hint: 'Some of this doesn’t look like real words. Write it out in full sentences.', words: words.length };
-  }
+  // Hard blocks: only obvious filler. Err on the side of accepting real (if short) answers.
+  if (words.length < floor) return fail(`Write a bit more: at least ${floor} real words (you have ${words.length}).`);
+  if (words.length < tokens.length * 0.6) return fail('Some of this doesn’t look like real words. Write it out in sentences.');
   const unique = new Set(words.map((w) => w.toLowerCase()));
-  if (unique.size < Math.max(5, words.length * 0.45)) {
-    return { ok: false, hint: 'Lots of repeated words. Explain your idea instead of repeating it.', words: words.length };
-  }
-  const commonCount = words.filter((w) => COMMON.has(w.toLowerCase())).length;
-  if (commonCount < 2) {
-    return { ok: false, hint: 'Write in sentences, not a list of words, so your reasoning shows.', words: words.length };
-  }
+  if (unique.size < Math.max(4, words.length * 0.4)) return fail('Lots of repeated words. Explain your idea instead of repeating it.');
+
+  // Soft tips: shown, but they do not block.
   if (opts.prompt) {
     const promptWords = new Set(tokenize(opts.prompt.toLowerCase()));
     const fresh = words.filter((w) => !promptWords.has(w.toLowerCase()) && !COMMON.has(w.toLowerCase()));
-    if (fresh.length < 3) {
-      return { ok: false, hint: 'This mostly repeats the question. Add your own explanation.', words: words.length };
-    }
+    if (fresh.length < 2) return fail('This mostly repeats the question. Add your own explanation.');
   }
   if (opts.keywords?.length && !opts.keywords.some((k) => hasKeyword(lower, k))) {
-    const sample = opts.keywords.slice(0, 4).join(', ');
-    return { ok: false, hint: `Use at least one science idea from this activity (for example: ${sample}).`, words: words.length };
+    return pass(`Saved ✓ Tip: can you connect this to a science idea (for example: ${opts.keywords.slice(0, 4).join(', ')})?`);
   }
-  return { ok: true, hint: 'Looks like a real explanation. Saved on this device ✓', words: words.length };
+  if (words.length < target) return pass('Saved ✓ Tip: a little more detail would make your reasoning clearer.');
+  return pass('Saved on this device ✓');
 }
 
 // Topic vocabularies used by prompts.

@@ -134,13 +134,18 @@ test('a student can complete the whole case and export a report', async ({ page,
     await page.waitForTimeout(800);
     await page.getByRole('button', { name: 'Skip to result' }).click();
   };
+  await expect(page.getByText('Your goal: stop the seizures safely')).toBeVisible();
   await order(/D5W/, '1 L', /INTO the brain/);
-  await expect(page.getByRole('heading', { name: /Worse/ })).toBeVisible();
-  await page.getByRole('button', { name: /Start a new trial/ }).click();
+  await expect(page.getByRole('heading', { name: /Round 1 result: Worse/ })).toBeVisible();
+  await page.getByRole('button', { name: 'End trial 1 here' }).click();
+  await expect(page.getByRole('heading', { name: 'Trial 1: Not stabilized' })).toBeVisible();
+  await page.getByRole('button', { name: /Start trial 2/ }).click();
   await order(/Hypertonic saline/, '500 mL', /OUT of the brain/);
-  await expect(page.getByRole('heading', { name: 'Seizures stop' })).toBeVisible();
-  await expect(page.locator('svg.calf .iv')).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: /Round 1 result: Seizures stop/ })).toBeVisible();
   await expect(page.getByText(/lying upright with her head raised/).first()).toBeVisible();
+  await expect(page.locator('svg.calf .iv')).toHaveCount(1);
+  await page.getByRole('button', { name: 'End trial 2 here' }).click();
+  await expect(page.getByRole('heading', { name: 'Trial 2: Stabilized safely' })).toBeVisible();
   await shot(page, '6-treat');
   await fill(page, /Explain why the treatment that worked/, ANSWERS.treatment);
   await page.getByRole('button', { name: /marathon runner/ }).click();
@@ -165,7 +170,7 @@ test('a student can complete the whole case and export a report', async ({ page,
   await expect(page.getByText(/Copied!|Copy was blocked/)).toBeVisible();
   const reportText = await page.locator('#report-text').innerText();
   expect(reportText).toContain('D5W');
-  expect(reportText).toContain('Seizures stop');
+  expect(reportText).toContain('Trial 2 result (1 round): Stabilized safely');
   expect(reportText).toContain('Treatment choice (first): A sports drink');
   expect(reportText).toContain('Lab flags first check: 7/8');
   const download = page.waitForEvent('download');
@@ -180,7 +185,7 @@ test('a student can complete the whole case and export a report', async ({ page,
   // Progress survives a reload.
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Your report' })).toBeVisible();
-  await expect(page.locator('#report-text')).toContainText('Seizures stop');
+  await expect(page.locator('#report-text')).toContainText('Stabilized safely');
 
   expect(errors).toEqual([]);
 });
@@ -199,6 +204,30 @@ test('reduced motion mode renders without animation loops or errors', async ({ p
     [...document.querySelectorAll('.calf *')].filter((el) => getComputedStyle(el).animationName !== 'none').length);
   expect(animated).toBe(0);
   expect(errors).toEqual([]);
+});
+
+test('overcorrection ends a trial automatically', async ({ page }) => {
+  await page.goto('./');
+  await page.locator('.stepper button').nth(5).click();
+  await page.getByLabel(/Hypertonic saline/).check();
+  await page.getByLabel('1 L', { exact: true }).check();
+  await page.getByLabel(/OUT of the brain/).check();
+  await page.getByLabel('Explain your prediction').fill('Because the saline raises blood sodium a lot.');
+  await page.getByRole('button', { name: /Start IV/ }).click();
+  await page.getByRole('button', { name: 'Skip to result' }).click();
+  await expect(page.getByRole('heading', { name: 'Trial 1: Trial over: sodium rose too fast' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Start IV/ })).toHaveCount(0);
+});
+
+test('mini-lab gate says what is missing and jumps to it (Honors)', async ({ page }) => {
+  await page.goto('./');
+  await page.locator('.stepper button').nth(3).click();
+  await page.getByLabel("I'm in Honors Biology").check();
+  const hint = page.locator('.gate-hint');
+  await expect(hint).toContainText('Lab 1 explanation');
+  await expect(hint).toContainText('Lab 3 explanation (Honors)');
+  await hint.getByRole('button', { name: 'Lab 3 explanation (Honors)' }).click();
+  await expect(page.getByRole('tab', { name: /Water potential/ })).toHaveAttribute('aria-selected', 'true');
 });
 
 test('filler answers are rejected', async ({ page }) => {

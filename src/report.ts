@@ -3,6 +3,7 @@ import {
   REFLECT_PROMPT, RUNNER,
 } from './content/case';
 import { FLUIDS } from './engine/physiology';
+import { VERDICT_TEXT } from './content/case';
 import type { Saved } from './state';
 import { assessAnswer, RULES } from './quality';
 
@@ -71,8 +72,9 @@ export function buildReport(s: Saved): ReportSection[] {
     lines: [
       ...(s.treatments.length
         ? s.treatments.map((t, i) =>
-            `Order ${i + 1} (trial ${t.trial}): ${FLUIDS[t.fluid].short}, ${t.volumeL} L. Predicted: ${t.predictedEffect === 'in' ? 'water into brain' : t.predictedEffect === 'out' ? 'water out of brain' : 'little change'}. Reason: "${t.prediction}". Result: ${OUTCOME_TEXT[t.outcome].title} (Na ${t.naBefore.toFixed(1)} → ${t.naAfter.toFixed(1)}).`)
+            `Trial ${t.trial}, order ${i + 1}: ${FLUIDS[t.fluid].short}, ${t.volumeL} L. Predicted: ${t.predictedEffect === 'in' ? 'water into brain' : t.predictedEffect === 'out' ? 'water out of brain' : 'little change'}. Reason: "${t.prediction}". Result: ${OUTCOME_TEXT[t.outcome].title} (Na ${t.naBefore.toFixed(1)} → ${t.naAfter.toFixed(1)}).`)
         : ['(no treatments given)']),
+      ...s.trialResults.map((r) => `Trial ${r.trial} result (${r.rounds} round${r.rounds === 1 ? '' : 's'}): ${VERDICT_TEXT[r.summary.verdict].title}. Seizures stopped: ${r.summary.seizuresStopped ? 'yes' : 'no'}; first-day sodium rise ${r.summary.rise >= 0 ? '+' : ''}${r.summary.rise.toFixed(1)} mEq/L.`),
       `Q: ${REFLECT_PROMPT.label}`,
       `A: ${a(REFLECT_PROMPT.id)}`,
     ],
@@ -115,7 +117,7 @@ export function progressList(s: Saved): Progress[] {
     { label: 'Brain simulation and explanation', done: s.brainWatched && has(BRAIN_EXPLAIN.id) },
     { label: s.honors ? 'Mini-labs 1, 2 & 3 (Honors)' : 'Mini-labs 1 & 2', done: has(MINILAB_PROMPTS.membrane.id) && has(MINILAB_PROMPTS.cell.id) && (!s.honors || has(MINILAB_PROMPTS.psi.id)) },
     { label: 'Causal chain', done: s.chain.solved && has('chain_explain') },
-    { label: 'Treatment and reflection', done: s.treatments.length > 0 && has(REFLECT_PROMPT.id) },
+    { label: 'Treatment trials and reflection', done: (s.trialResults.some((r) => r.summary.verdict === 'safe') || s.trialResults.length >= 3) && has(REFLECT_PROMPT.id) },
     { label: 'Runner case', done: RUNNER.questions.every((q) => has(q.id)) && !!s.runnerChoice.current },
   ];
 }

@@ -223,3 +223,29 @@ export function classifyOutcome(before: PhysState, after: PhysState): Outcome {
   else kind = 'no_help';
   return { kind, naChange, icpChange };
 }
+
+// ---------------- Trials ----------------
+
+/** IV rounds allowed per trial (each round = 1 h infusion + 5 h observation, so 4 rounds ≈ the first day). */
+export const MAX_ROUNDS = 4;
+
+export type Verdict = 'safe' | 'overcorrected' | 'harmed' | 'not_stabilized';
+
+export interface TrialSummary {
+  seizuresStopped: boolean;
+  riseOk: boolean;
+  noHarmfulFluid: boolean;
+  /** Rise in plasma Na since the start of the trial (mEq/L). */
+  rise: number;
+  verdict: Verdict;
+}
+
+/** Score a finished trial: seizures stopped, first-day sodium rise within the safe limit, no harmful fluid. */
+export function trialVerdict(s: PhysState): TrialSummary {
+  const seizuresStopped = s.status === 'stable' || s.status === 'healthy';
+  const rise = s.maxNaSinceStart - s.naAtTreatmentStart;
+  const riseOk = !s.overcorrected;
+  const noHarmfulFluid = !s.hemolysis;
+  const verdict: Verdict = !riseOk ? 'overcorrected' : !noHarmfulFluid ? 'harmed' : seizuresStopped ? 'safe' : 'not_stabilized';
+  return { seizuresStopped, riseOk, noHarmfulFluid, rise, verdict };
+}
