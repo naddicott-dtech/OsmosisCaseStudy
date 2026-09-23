@@ -2,6 +2,8 @@
 
 A static teaching web app for high school Biology: students treat Juniper, a calf with seizures from low blood sodium (hyponatremia). Live at https://naddicott-dtech.github.io/OsmosisCaseStudy/. Repo: github.com/naddicott-dtech/OsmosisCaseStudy. The owner and teacher is Neal. Updated 2026-09-23.
 
+**Start with PLAN.md.** It is the single source of truth for status, the decisions log (what Neal decided and when), the Salmon case spec, open decisions, and classroom observations. Update it when you change status or record a decision.
+
 ## Scope for agents working here
 
 - **This folder is its own git repo.** It sits inside a Biology curriculum workspace (the parent folder), which holds unrelated curriculum files and private student records. **Do not read, search, or modify anything outside this folder** unless Neal explicitly asks. The parent's AGENTS.md is about that curriculum workspace; for app work, this file is the guide. To avoid inheriting the parent context entirely, clone the repo somewhere else.
@@ -36,7 +38,7 @@ Vite + TypeScript + Preact + @preact/signals. Canvas 2D for molecules. No UI fra
 - `src/report.ts`: plain-text report and progress list.
 - `src/ui/`: screens (`screens/*.tsx`), `molrender.ts` (cached sprites, bilayer drawing, a `frameLoop` with visibility pause and a 30 fps fallback), `BrainCanvas.tsx`, `Calf.tsx` (Blender frames, seizure episode timeline, IV overlay), `ExamCard.tsx` (exam close-up dialogs with text overlays).
 - `art/`: Blender scripts (`calf.py`, `exam.py`), anchors JSON, and source PNGs. Web copies are in `public/art/*.webp`. Regenerate with `/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --python art/calf.py` (see art/README.md).
-- Docs: README.md (classroom use), MODEL.md (science, simplifications, sources), PLAN.md (design history, open decisions).
+- Docs: PLAN.md (status, decisions, next work), README.md (classroom use), MODEL.md (science, simplifications, sources).
 
 ## Requirements that are easy to break
 

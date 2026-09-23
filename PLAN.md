@@ -1,134 +1,145 @@
-# Osmosis Case Study — build plan
+# Osmosis Case Study: plan
 
-Drafted 2026-09-23. **Status (2026-09-23 evening):** slices 0–6 built as v1.0 for classroom use on 2026-09-24. Analytics/Replit deferred. See README.md for usage and MODEL.md for the science. Defaults chosen by the assistant, pending Neal's review: patient named Juniper; Ψ calculator labeled optional extension; runner case is the final Check item in the report; submission by copy/download into Canvas.
+This is the single source of truth for status, decisions, and next work on this repo. The curriculum workspace outside this repo only points here. Updated 2026-09-23. For how to code here, see CLAUDE.md. For classroom use, see README.md. For the science and its sources, see MODEL.md.
 
-**Revision 2 (2026-09-23, after Neal's feedback):**
-- Rewrote the brain and membrane simulations, with water crossing the bilayer, emergent net flow, and no level jitter.
-- Fixed the causal-chain bug: a missing link was being reported as "out of order".
-- Rewrote the owner narrative with false clues.
-- Added the head exam, an answer-quality check, the IV visualization, and the Blender calf.
-- Water potential is now Honors-required.
+## 1. Status
 
-**Revision 3 (2026-09-23 evening):**
-- Seizure episodes shown from an overhead camera.
-- Exam close-up pop-ups added.
-- Treatment restructured into trials of up to 4 rounds, with a goal card, a "safe for day 1" band, reassessment after each round, automatic end on overcorrection, and a scorecard.
-- Disabled buttons now say what is missing.
-- The answer check blocks only obvious filler; length and topic words are tips. This follows Neal's worry about false negatives.
+| | |
+|---|---|
+| Live | https://naddicott-dtech.github.io/OsmosisCaseStudy/ (public GitHub Pages, deploys on push to `main`) |
+| Juniper case | v1 complete; first classroom use planned for 2026-09-24 (Marathon Runner unit, teacher Unit 2) |
+| Runner transfer page | Built but **hidden** (`ENABLE_RUNNER = false`) |
+| Salmon case | **Planned, not started** (§4) |
+| Analytics / hosted edition | Deferred (§5) |
+| Canvas | No changes made. Neal creates the assignment, and students paste or upload their report |
+| Classroom observations | None recorded yet. Add them under §6 after use; don't assume how it went |
 
-**Runner case:** hidden (decided 2026-09-23) because it previews the performance task too closely.
+## 2. Decisions log
 
-**Next extension idea (Neal, 2026-09-23): salmon osmoregulation.** A salmon hatches in fresh water, where its body is saltier than the water: water floods in, so it makes lots of dilute urine and its gills actively pull in salt. As a smolt it moves to the ocean, where its body is less salty than the water: water leaks out, so it drinks seawater and its gill ionocytes pump salt OUT using Na⁺/K⁺-ATPase. As an adult it returns to fresh water to spawn and switches back.
+Teacher decisions (Neal) are marked **N**. Assistant defaults that Neal accepted are marked **A→N**.
 
-Why it works:
-- It tests transfer in BOTH directions and adds active transport, without previewing the runner performance task.
-- It could reuse the membrane world with a pump route.
-- It could work as an extension or make-up activity.
+- 2026-09-23 **N**: Build an original activity in place of ExploreLearning's "Osmosis" Gizmo. Host on GitHub Pages now; Replit later for analytics.
+- 2026-09-23 **N**: Needed for class 2026-09-24, "non-analytics but production ready."
+- 2026-09-23 **A→N**: The patient is Juniper, a 3-week-old Holstein heifer bottle calf.
+- 2026-09-23 **N**: The history is well-meaning but misguided amateur care. Diarrhea is the *symptom* that led the owner to "rehydrate" with plain water and stop milk. There are false clues (horse blanket, bump on the head).
+- 2026-09-23 **N**: Water potential is **required for Honors, optional for everyone else** (there's an "I'm in Honors" checkbox).
+- 2026-09-23 **N**: The cattle reference ranges (Cornell AHDC) and a first-day sodium correction limit of about 10 mEq/L are fine.
+- 2026-09-23 **N**: Water must visibly cross the lipid bilayer, not only aquaporins. The mini-lab levels must not oscillate.
+- 2026-09-23 **N**: Borrow Kodolab's visual ideas with attribution (kodolab.org). No Kodolab code: it is AGPL-3.0, and adopting it would mean relicensing this repo, which Neal has not decided.
+- 2026-09-23 **N**: The calf is rendered in Blender, in a comic-book style. Seizures are shown in episodes (tonic arch, then clonic paddling), not continuous "swimming."
+- 2026-09-23 **N**: Exam tools open close-up pictures. The blood tube label reads "Juniper 9/24/26" (a fixed date, by request).
+- 2026-09-23 **N**: Treatment must make clear that multiple rounds are allowed. This became trials of up to 4 rounds with a goal card and scorecard.
+- 2026-09-23 **N**: Answer checks stay **loose**: false negatives are worse than students padding answers. Only obvious filler is blocked.
+- 2026-09-23 **N**: **Hide the runner page.** It previews the Marathon Runner performance task (PT) too closely, like the previous unit's "mad libs" scaffold.
+- 2026-09-23 **N**: The next case is **salmon osmoregulation**, as a separate page in this repo (§4). The reverse-hypernatremia idea is not used (hypernatremia in runners is real, but too close to the PT).
+- 2026-09-23 **N**: Both cases in one class period is too much. Salmon is offered from Juniper's report as a small optional link, not a required step.
 
-Note: hypernatremia in runners is real (dehydration and weight loss, especially in multistage ultramarathons), but it would sit too close to the performance task as well.
+## 3. What exists (Juniper case)
 
-Neal's decisions: patient name Juniper is fine; water potential is required for Honors and optional for everyone else; reference ranges and the correction limit are OK.
+Flow: Intake → Exam & Labs → Inside the Brain → Mini-labs → Causal Chain → Treatment → Report (about 45–60 min).
 
-Remaining **Decision needed** items below are still open for later editions.
+- **Evidence captured in the report:**
+  - first hypothesis
+  - first lab-flag score
+  - brain prediction (right or wrong)
+  - first causal-chain attempt and number of checks
+  - every treatment round's prediction and reason
+  - trial verdicts
+  - written answers
+- **Treatment:** each trial is up to 4 rounds (about the first day). It ends automatically on overcorrection or a harmful fluid, and gets a scorecard (seizures stopped, first-day rise ≤ 10, no harmful fluid). To move on, a student needs one safe stabilization or 3 trials.
+- **Evidence limits:** the report is self-reported text from an unsupervised browser. It shows engagement and reasoning attempts; it does not verify authorship. The answer check is a speed bump only.
 
-## 1. Purpose and fit
+**Juniper backlog** (not scheduled; ask Neal before doing):
+- **Salmon link:** add the optional extension link at the end of the Report page once Salmon exists.
+- **Skin-tent picture:** add a skin-tent inset to the eye close-up (the finding is currently text only).
+- **Label date:** make the blood-tube date dynamic, if Neal reuses the case on other dates.
+- **Tremor animation:** add eye-flick (nystagmus) or eyelid frames; the current tremor is subtle.
+- **Runner page:** keep it hidden. Delete it or repurpose its data format for Salmon (§4) once Salmon ships.
 
-A browser case study for the Marathon Runner unit (teacher Unit 2). Students diagnose a calf with tremors after diarrhea, find low blood sodium, look inside the brain to see water moving by osmosis, and choose IV fluid, predicting the result before they see it.
+## 4. Next: Salmon case (`salmon.html`)
 
-The case matters because it has **the same mechanism as exercise-associated hyponatremia**. Sweat or diarrhea loses sodium and water. Replacing that with plain water dilutes blood sodium, and water then moves into brain cells. The activity ends with a runner transfer case so the calf is practice for the performance task, not a side story. Historical unit plans place this around "water balance" and "review/hyponatremia."
+### Purpose
+1. **Optional extension**, linked from Juniper's report: *"Want to practice your understanding? Explore how salmon survive in both fresh water and salt water."*
+2. **PT retake "ticket" or test correction:** students complete it in class, ideally with GoGuardian limited to one tab, to earn a retake or correction. It gives fresh practice of the PT's *reasoning skills* in a different system, so fewer students need to retake the Marathon Runner task itself.
+3. **Scope:** about 25–35 minutes. Never required alongside Juniper in the same period.
 
-Evidence target: CI1 Structure & Function (organ → cell → molecule → homeostasis). This is last year's outcome label; confirm the current course mapping.
+### Learning targets
+- Predict the direction of net water movement between a fish and its environment from relative solute concentration (fresh water: water in; seawater: water out).
+- Explain why osmosis alone can't keep a fish's blood balanced, and how **active transport** does it. Gill ionocytes use Na⁺/K⁺-ATPase to pull salt IN in fresh water and pump it OUT in seawater, which costs energy (ATP).
+- Relate kidney output to the environment: lots of dilute urine in fresh water, little urine in seawater, and drinking seawater at sea.
+- Interpret a data set against normal ranges, build a causal chain, say what's still working, and explain a secondary effect. These are the same *skills* as the PT, applied to different content.
 
-### What students should be able to do afterward
-1. Explain a causal chain from fluid loss or replacement → blood [Na⁺] → water movement across a membrane → cell volume and pressure → nervous-system symptoms.
-2. Predict the direction of net water movement from solute concentrations on each side of a semi-permeable membrane.
-3. Justify a treatment choice, and explain why the other choices fail or cause harm.
-4. Transfer: apply the same chain to a runner's data.
+### Architecture
+- **Two pages from one build.** Vite multi-page: `index.html` (Juniper) plus `salmon.html`. Add `build.rollupOptions.input` in vite.config.ts.
+- **Uppercase URL.** GitHub Pages is case-sensitive. Add a tiny `Salmon.html` that redirects to `salmon.html`, so both URLs Neal might share work.
+- **Shared code:** `src/engine/membrane.ts` (add an **active pump route**: ions moved against their gradient at a set rate, costing "ATP"), `src/ui/molrender.ts`, `src/quality.ts`, `src/state.ts` (make the storage key a parameter), the report builder pattern, widgets, and styles.
+- **New code:** `src/salmon/` (entry, screens, content file) and `src/engine/fish.ts`, a pure model with tests. For the fish model:
+  - **State:** plasma osmolality (normal about 300–340 mOsm/kg), body water, environment osmolality (fresh water about 0–10; seawater about 1000–1100).
+  - **Water across gills and skin:** flux ∝ (plasma osm − environment osm) × permeability.
+  - **Ions:** passive leak down the gradient, plus the active pump. Its direction depends on the ionocyte type, which the student controls; the pump costs energy.
+  - **Drinking and kidney:** drinking (on or off) and urine volume/concentration settings.
+  - **Goal:** keep plasma osmolality in range across life stages.
+  - **Every number** must be reference-checked before use (§4 verification).
+- **Separate localStorage key** (`osmosis-salmon-v1`), so a Salmon retake never touches Juniper progress on a shared Chromebook.
+- **Same report format** (copy / download / print), with a header naming the Salmon case and optional retake/correction wording.
 
-## 2. Originality and copyright
+### Draft flow
+1. **Hatchling in the river (Engage → Predict → Observe).** Predict water direction, then watch in the membrane view (gill cell | river). Water floods in and salt leaks out. Students use controls (gill pump direction and rate, urine output) to keep plasma in range.
+2. **Smolt heading to sea (Predict → Practice).** The environment flips. Predict first, then the student must turn on drinking, switch the gill pumps to secrete salt, and cut urine output. Feedback targets misconceptions: "salt diffuses in so the fish gets saltier, that's fine"; "just drink more fresh water"; "fish don't drink."
+3. **"Moved too fast" data case (Check; the core of the retake ticket).** A hatchery smolt was moved to seawater before its gills finished switching. The data table has normal ranges: plasma Na⁺ and osmolality high, body mass down, gill Na⁺/K⁺-ATPase activity low, maybe hematocrit up. Students flag values, write a causal chain, say what's still working, and give one secondary effect. **Less scaffolding than Juniper:** there's no simulation on this screen, and feedback names misconceptions without revealing answers. Written answers are the evidence.
+4. **Adult returning to spawn (brief reverse check).** Predict and explain the switch back to freshwater mode. **Honors:** a water-potential comparison of blood versus river versus ocean (required for Honors, optional for others, as in Juniper).
+5. **Report.**
 
-The pasted description summarizes ExploreLearning's commercial "Osmosis" STEM Case. We will build an **original activity that teaches the same concepts**. We will not copy their text, art, UI, question wording, or character names. Suggested changes: a new patient name (for example "Juniper, 3-week-old Holstein calf"), our own illustrations, and our own prompts. The app will not use their product name and will not imply any affiliation. **Decision needed:** patient name.
+### Evidence design (for retake/correction use)
+- Keep first attempts (predictions, first flag score, first chain) in the report, as in Juniper.
+- At least one **independent written explanation with no simulation support**, so the report shows what the student can explain on their own.
+- Loose answer check (the same policy as Juniper).
+- Monitored in-class completion (GoGuardian) is Neal's integrity layer; the app does not try to prove authorship.
 
-## 3. Science corrections to the pasted spec
+### Open decisions (ask Neal before building)
+1. **Rubric alignment:** should the Check prompts map to the PT rubric or outcome criteria (CI1 structure/function, levels 2–4)? If so, get the criteria from Neal. Don't guess the PT permutations.
+2. **Honors:** water potential required for Honors in Salmon too? (Default: yes, matching Juniper.)
+3. **Retake/correction framing:** does the report need a field or header for "PT retake ticket" versus "test correction" versus "extension"? No names are stored; Canvas identifies the student.
+4. **Species and story:** a specific salmon (e.g. coho or Atlantic), a named hatchery fish, and whether to include a hatchery-worker narrator (parallel to Dana).
+5. **Art:** Blender renders in the calf's comic style (fish at three life stages, gill close-up), or simpler canvas art.
 
-The pasted description is a useful outline but contains several simplifications that would teach misconceptions. Planned fixes:
+### Verification before classroom use
+- Reference-check freshwater/seawater osmolality, typical salmonid plasma Na⁺/osmolality ranges, smolt transfer-stress values, and the roles of gill Na⁺/K⁺-ATPase and ionocytes (primary sources or university fisheries references). Record them in MODEL.md with sources.
+- Engine tests: water direction flips with the environment; pump direction must match the environment to stay in range; a "too fast" transfer produces the data-case pattern.
+- Playwright flow at Chromebook and phone sizes; reduce-motion; no horizontal scroll; performance under 6× CPU throttle.
+- A teacher play-through.
 
-| Pasted spec | Problem | Plan |
+### Acceptance checks
+- `salmon.html` and `Salmon.html` both load on the live site. Juniper is unaffected (its tests pass).
+- A full student run completes in 35 minutes or less; the report copies cleanly and shows first attempts.
+- Juniper's report shows the optional Salmon link and is never blocked by it.
+
+## 5. Later: hosted edition (Replit)
+- **Optional analytics:** anonymous or pseudonymous student-response analytics. This needs a separate privacy design first. Follow the Biology workspace privacy rules: no identifiers in model context, and screening before any model review.
+- **Model-based answer check:** an API key held server-side, never in the static site. Keep the loose-false-negative policy.
+- **No commitments yet.**
+
+## 6. Classroom observations
+_None yet. Record dated, teacher-reported observations here (what confused students, timing, bugs), kept separate from assistant interpretation._
+
+## 7. History and design rationale
+
+**v1 (2026-09-23 morning).** Built from a pasted description of the Gizmo. Science corrections made to that description:
+
+| Pasted spec | Problem | What we did |
 |---|---|---|
-| Causal chain "Diarrhea → Sodium loss → Hypotonic blood" | Diarrhea loses water *and* sodium. Blood becomes hypotonic mainly when the losses are **replaced with plain water** (drinking, or water-only fluids). | Add the history that the calf was given plain water / drank heavily. This is the direct parallel to a runner over-drinking plain water. |
-| Diarrhea with "normal potassium" | Calf diarrhea classically causes dehydration, metabolic acidosis, and often **high K⁺**. | Show realistic secondary values (low bicarbonate, possibly high K⁺, high hematocrit) as "systems affected" evidence. Advanced students explain secondary effects. Values need a vet reference check (§9). |
-| IV option "Pure distilled water" | Pure water is never given IV; it bursts red blood cells. | Keep it as a **thought-experiment prediction** ("What would happen if…"), clearly labeled "never done clinically." For the real menu, use D5W (dextrose is metabolized, so it behaves like free water). |
-| "Normal saline does not pull water fast enough" (hard-coded) | 0.9% saline has 154 mEq/L Na⁺, which is *higher* than the calf's 110. It raises Na⁺ slowly and restores volume. | Compute outcomes from concentrations. Nothing is hard-coded, so the engine explains its own results. |
-| Hypertonic saline → "calf stands up, cured" | Too-fast correction of long-standing hyponatremia damages the brain (osmotic demyelination). | Include a rate choice. Correcting a little stops the seizures; overcorrecting gives a delayed-harm consequence. There is no single "click the right bag" answer. |
-| Membrane mode "Semi-permeable (aquaporin only)" plus O₂ | O₂ crosses the lipid bilayer without aquaporins. | Membrane modes: lipid bilayer only / bilayer + aquaporins / leaky (all). O₂ crosses in every mode except a sealed barrier. |
-| Tonicity "hypotonic → turgor/lysis" | Turgor is a plant-cell (cell wall) idea. | Animal cell: swells, then lyses. An optional toggle shows a plant cell (turgor) for comparison. |
-| Endothelial aquaporins, neurons swelling | In the brain, AQP4 sits mostly on astrocyte end-feet, and astrocytes swell first. | Label the barrier "blood–brain barrier" and the cells "brain cells." Honors notes mention astrocytes. |
-| Seizure = ICP > 25 | A model rule, not physiology. Low Na⁺ also changes neuron excitability. | Keep the threshold as a labeled **model rule** and show a "model limits" card. |
-| Ψs = −iCRT calculator | Mainly AP/plant content. | Optional Honors extension only. |
+| "Diarrhea → sodium loss → hypotonic blood" | Diarrhea loses water *and* sodium; blood goes hypotonic when the losses are replaced with plain water | Owner gives plain water and stops milk |
+| Diarrhea with normal K⁺ | Calf diarrhea often causes acidosis and high K⁺ | High K⁺, low HCO₃⁻, high PCV and BUN in the labs |
+| Pure water IV option | Never given IV; causes hemolysis | Labeled thought experiment; D5W is the real "free water" option |
+| Normal saline "doesn't work" (hard-coded) | 154 mEq/L is higher than 110; it raises Na⁺ slowly | Outcomes computed from concentrations |
+| Hypertonic saline → "cured" | Too-fast correction causes osmotic demyelination | First-day limit and overcorrection verdict |
+| "Semi-permeable = aquaporin only," with O₂ | O₂ crosses the lipid itself | Bilayer / aquaporin / leaky modes |
+| Hypotonic → "turgor" | Turgor is a plant-cell idea | Animal cell lyses; plant toggle shows turgor |
+| Endothelial aquaporins, neurons swell | AQP4 is on astrocytes, which swell first | Stated in model limits |
+| Seizure = ICP > 25 | A model rule | Labeled as a model rule |
 
-All numbers (bovine Na⁺ range ~135–150 mEq/L, ICP, correction-rate limits) will be checked against a veterinary or physiology reference before release. Game thresholds are rules of the model, not clinical reference ranges.
+**v2 (2026-09-23).** Emergent membrane simulation (macro levels plus molecule sample) and bilayer crossings in the brain view. Also: the chain grader bug (a missing link was reported as "out of order"), the narrative rewrite with false clues and head exam, the answer check, IV visuals, the Blender calf, and Honors labeling.
 
-## 4. Student flow (about 45–60 min core; extensions optional)
+**v3 (2026-09-23 evening).** Seizure episodes from an overhead camera; exam close-ups; treatment as trials with rounds and scorecards; "still needed" hints on disabled buttons; looser answer check; runner page hidden; tallies reset per round.
 
-```
-1 Intake → 2 Exam & Labs → 3 Inside the Brain → 4 Mini-labs → 5 Causal Chain → 6 Treat → 7 Runner Transfer → Report
-```
-
-1. **Intake.** The calf is down and trembling. History is told as an owner's story. **Engage prompt:** "What might be going on? What would you test?"
-2. **Exam & Labs.** Click tools (thermometer, stethoscope, blood draw). Results appear on a chart **with normal ranges shown**, matching the runner data format. The student flags out-of-range values and says what still looks normal.
-3. **Inside the Brain** (particle canvas). Blood vessel | blood–brain barrier with aquaporins | brain tissue. Na⁺ cannot cross; water moves both ways, with net flow toward higher solute. Live gauges show brain water volume, pressure, and a *non-flashing* activity trace. **Predict before play:** "Which way will more water move?"
-4. **Mini-labs** (reachable from a Handbook button at any time):
-   - Membrane chamber: choose the membrane, add O₂ / Na⁺ / H₂O, observe.
-   - Cell in a beaker: salt slider 0–5%, the cell swells, stays the same, or shrinks. Hypotonic, isotonic, and hypertonic appear only after the student has observed each.
-   - Honors: water-potential calculator.
-5. **Causal Chain.** Order cards: fluid loss → water-only replacement → low blood Na⁺ → water enters brain cells → swelling/pressure → seizures. Includes **distractor cards** that encode misconceptions ("salt moves into the brain", "cells shrink"). Feedback is specific to the misconception. Keyboard-operable (no drag-only).
-6. **Treat.** Choose a fluid and a rate, then write a prediction with a reason *before* infusing. The engine runs, and consequences are explained, not just "wrong." Retry is allowed, and the first prediction is kept in the report.
-7. **Runner Transfer (Check).** A short new runner dataset: over-drank water during a marathon, confused, low Na⁺. The student writes the chain and says what the data can't tell us. No simulation help; this is the evidence item.
-8. **Report.** A one-page summary of predictions, first attempts, chain, and written answers → **Copy / Download** for Canvas submission. No accounts, no names stored, no server.
-
-## 5. Architecture (matches Climate Farmer conventions)
-
-- **Stack:** Vite + TypeScript + Preact + @preact/signals, HTML5 Canvas for particles, Vitest (engine), Playwright (flows). Static build deployed by GitHub Actions `pages.yml` with `base: '/OsmosisCaseStudy/'`.
-- **`src/engine/`**: pure, deterministic TypeScript with no DOM.
-  - `physiology.ts`: a two-compartment model (blood, brain). The state is the pasted `SimulationState`, extended with `brain.osmolality`, `blood.osmolality`, `correctionRate_mEq_per_hr`, `elapsedSimHours`, `harmFlags`.
-  - Fixed-step update: `flux = K · (osm_brain − osm_blood)` (positive = into brain) → brain volume → pressure through a compliance curve (steeper when swollen) → status by thresholds with hysteresis (seize > 25, stable ≤ 18).
-  - Infusion mixes the Na⁺ and water of the bag's contents into blood each step. A too-fast rise in Na⁺ sets a delayed-harm flag.
-  - `particles.ts`: the visual layer only. Particle counts come from engine concentrations, so animation never contradicts the numbers.
-  - A seeded RNG makes the tests reproducible.
-- **`src/content/`**: all case text, lab values, choices, and feedback as JSON/TS data, so a later runner or second case is a content file, not new code.
-- **`src/ui/`**: screens, clipboard tabs (Labs / Reasoning / Orders), and the report.
-- **State persistence:** localStorage only, wrapped in try/catch, so a reload doesn't lose progress on a Chromebook. Nothing leaves the device.
-
-## 6. Accessibility and classroom reliability (requirements)
-
-- **No flashing.** The seizure animation is slow tremor motion. The trace stays under 3 flashes/s with no strobe, and there is a Reduce Motion toggle that respects `prefers-reduced-motion`.
-- Every drag has a keyboard or click alternative. Colors are never the only signal (gauges also carry text). Screen-reader labels on gauges.
-- Works offline after first load (PWA cache optional), on Chromebooks, and at 1366×768 as well as phone width.
-- Canvas performance: cap particles and pause when the tab is hidden.
-
-## 7. Delivery slices (each is usable on its own)
-
-| Slice | Contents | Acceptance check |
-|---|---|---|
-| 0 Scaffold | Vite/Preact/TS, Pages workflow, placeholder page live | URL loads on a school Chromebook |
-| 1 Engine | physiology.ts plus tests: water-only lowers Na⁺ and raises brain volume; isotonic changes little; hypertonic lowers pressure; overcorrection flag; no NaN over 10,000 steps | `npm test` green |
-| 2 Brain view | Particle canvas and gauges driven by the engine, prediction prompt | Direction of net flow matches the sign of the engine flux in every scenario |
-| 3 Case shell | Intake → Labs → Treat → Report (the MVP, **usable in class**) | Full run in under 45 min, report copies cleanly |
-| 4 Reasoning | Causal-chain builder with misconception feedback, runner transfer | Keyboard-only run-through |
-| 5 Mini-labs | Membrane chamber, beaker cell, Honors Ψ calculator | Each mode shows the correct qualitative result |
-| 6 Polish | Art, reduce-motion, offline cache, Playwright flows | a11y and flow tests pass |
-| Later (Replit) | Optional backend for anonymous/pseudonymous response analytics | Separate privacy design first; see Biology privacy rules |
-
-## 8. Decisions needed from Neal
-
-1. **When is it needed?** As of 2026-09-09 the class was on day 2 of Marathon Runner, and water balance was around day 7 historically. If that is imminent, ship Slice 3 (MVP) first and use the Gizmo or handbook content for the remaining pieces.
-2. Patient name and art style (simple flat vector is fastest).
-3. Which pieces are Honors-only (Ψ calculator, astrocyte detail, overcorrection).
-4. Submission path: copy/download to a Canvas assignment (recommended for GitHub Pages), or wait for Replit.
-5. Is the runner-transfer item a Check for the bundle, or practice only?
-6. OK to push this plan and scaffold to the **public** repo? The repo contains no student data by design.
-
-## 9. Verification to do before classroom use
-
-- Reference-check all lab values and ranges (bovine and human), fluid compositions, and correction-rate guidance.
-- Teacher play-through for accuracy and tone. Engine tests confirm behavior matches the stated model. A "Model limits" card lists the simplifications.
+**Why the membrane model has two layers.** Particle-only water levels wandered about ±3% at any particle count a Chromebook can afford. That's real statistics for a few hundred molecules, but it read as broken. The levels now follow the average behavior. The dots are a sample that crosses both ways and is steered only enough to stay in step. MODEL.md explains this to curious teachers.
