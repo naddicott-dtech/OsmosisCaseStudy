@@ -27,7 +27,9 @@ RENDER_DIR = os.path.join(HERE, "renders")
 WEB_DIR = os.path.join(PROJECT, "public", "art")
 W, H = 1200, 780
 GROUND_FRAC = 0.88          # ground line at 88% of image height (from top)
-CAM_ELEV = 20.0             # degrees above horizontal (same for every pose)
+CAM_ELEV = 20.0             # side camera: degrees above horizontal (standing, sternal)
+HIGH_ELEV = 58.0            # high camera for the lying-on-side frames
+HIGH_GROUND_FRAC = 0.64     # body-centre ground point at 64% of height (high camera)
 ORTHO_SCALE = 2.45          # metres across the image width
 OUTLINE_W = 0.0085          # inverted-hull outline thickness (m)
 
@@ -76,13 +78,13 @@ def link(ob):
     return ob
 
 
-def setup_camera_and_light(sc):
-    cam_data = bpy.data.cameras.new("Cam")
+def make_camera(sc, name, elev_deg, ground_frac):
+    cam_data = bpy.data.cameras.new(name)
     cam_data.type = "ORTHO"
     cam_data.ortho_scale = ORTHO_SCALE
     cam_data.clip_start, cam_data.clip_end = 0.1, 50
-    cam = link(bpy.data.objects.new("Cam", cam_data))
-    e = math.radians(CAM_ELEV)
+    cam = link(bpy.data.objects.new(name, cam_data))
+    e = math.radians(elev_deg)
     d = V((0, math.cos(e), -math.sin(e)))          # looking toward +y, down
     target = V((0.0, 0.0, 0.45))
     cam.location = target - d * 12
@@ -90,10 +92,16 @@ def setup_camera_and_light(sc):
     cam.rotation_quaternion = d.to_track_quat("-Z", "Y")
     sc.camera = cam
     bpy.context.view_layer.update()
-    # shift so the ground line (z=0, y=0) sits at GROUND_FRAC of the height
+    # shift so the ground point (0, 0, 0) sits at ground_frac of the height
     ny = world_to_camera_view(sc, cam, V((0, 0, 0))).y
-    cam_data.shift_y = (ny - (1 - GROUND_FRAC)) * H / W
+    cam_data.shift_y = (ny - (1 - ground_frac)) * H / W
     bpy.context.view_layer.update()
+    return cam
+
+
+def setup_camera_and_light(sc):
+    cams = {"high": make_camera(sc, "CamHigh", HIGH_ELEV, HIGH_GROUND_FRAC),
+            "side": make_camera(sc, "Cam", CAM_ELEV, GROUND_FRAC)}
 
     sun_data = bpy.data.lights.new("Sun", "SUN")
     sun_data.energy = 3.2
@@ -103,7 +111,43 @@ def setup_camera_and_light(sc):
     ld = V((0.55, 0.75, -0.75)).normalized()        # from upper-left-front
     sun.rotation_mode = "QUATERNION"
     sun.rotation_quaternion = ld.to_track_quat("-Z", "Y")
-    return cam
+    cams["sun"] = sun
+    return cams
+
+
+SUN_DIRS = {"side": V((0.55, 0.75, -0.75)),     # from upper-left-front
+            "high": V((0.15, 0.79, -0.6))}     # lying frames: from behind the camera so the
+                                                # floor shadow shows above her back
+
+
+def cast_shadow_material():
+    """Ground plane that is transparent where lit and darkens only where the calf
+    casts a shadow (a toon 'shadow catcher' for EEVEE)."""
+    mat = bpy.data.materials.new("GroundShadow")
+    nt, nodes, links = _nodes(mat)
+    diff = nodes.new("ShaderNodeBsdfDiffuse")
+    s2r = nodes.new("ShaderNodeShaderToRGB")
+    links.new(diff.outputs[0], s2r.inputs[0])
+    bw = nodes.new("ShaderNodeRGBToBW")
+    links.new(s2r.outputs["Color"], bw.inputs[0])
+    ramp = nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.interpolation = "LINEAR"
+    e = ramp.color_ramp.elements
+    ramp.color_ramp.interpolation = "CONSTANT"
+    e[0].position, e[0].color = 0.0, (0.40, 0.40, 0.40, 1)
+    e[1].position, e[1].color = 0.3, (0, 0, 0, 1)
+    links.new(bw.outputs[0], ramp.inputs[0])
+    em = nodes.new("ShaderNodeEmission")
+    em.inputs["Color"].default_value = (*lin((0.25, 0.18, 0.1)), 1)
+    tr = nodes.new("ShaderNodeBsdfTransparent")
+    mix = nodes.new("ShaderNodeMixShader")
+    links.new(ramp.outputs["Color"], mix.inputs[0])
+    links.new(tr.outputs[0], mix.inputs[1])
+    links.new(em.outputs[0], mix.inputs[2])
+    out = nodes.new("ShaderNodeOutputMaterial")
+    links.new(mix.outputs[0], out.inputs["Surface"])
+    mat.surface_render_method = "BLENDED"
+    return mat
 
 
 # ----------------------------------------------------------------------------
@@ -301,8 +345,8 @@ def outline_material():
     return mat
 
 
-def shadow_material():
-    mat = bpy.data.materials.new("ContactShadow")
+def shadow_material(stepped=False):
+    mat = bpy.data.materials.new("ContactShadowStepped" if stepped else "ContactShadow")
     nt, nodes, links = _nodes(mat)
     tc = nodes.new("ShaderNodeTexCoord")
     gr = nodes.new("ShaderNodeTexGradient")
@@ -313,6 +357,10 @@ def shadow_material():
     e = ramp.color_ramp.elements
     e[0].position, e[0].color = 0.0, (0, 0, 0, 1)
     e[1].position, e[1].color = 0.55, (0.42, 0.42, 0.42, 1)
+    if stepped:   # flat two-step shadow for the high-camera frames (small WebP alpha)
+        ramp.color_ramp.interpolation = "CONSTANT"
+        e[1].position, e[1].color = 0.08, (0.14, 0.14, 0.14, 1)
+        e.new(0.3).color = (0.26, 0.26, 0.26, 1)
     links.new(gr.outputs["Fac"], ramp.inputs[0])
     em = nodes.new("ShaderNodeEmission")
     em.inputs["Color"].default_value = (*lin((0.25, 0.18, 0.1)), 1)
@@ -371,6 +419,19 @@ REST_HC = V((-0.585, 0.0, 0.92))
 REST_F = V((-0.74, 0.0, -0.67)).normalized()
 
 
+def fore_angles(a, fl):
+    """Foreleg segment angles from a whole-limb sweep `a` (deg, + = forward) and
+    flexion `fl` (+ bends elbow/knee so the cannon folds back; - = rigid extension)."""
+    c = -4 + a - 1.3 * fl
+    return [-12 + a, 7 + a + 0.3 * fl, c, c + 15, c + 20]
+
+
+def hind_angles(b, g):
+    """Hind-leg angles from sweep `b` and flexion `g` (+ flexes stifle and hock)."""
+    c = 5 + b + g
+    return [30 + b + 0.5 * g, -35 + b - 0.6 * g, c, c + 10, c + 20]
+
+
 def head_axes(pitch=0.0, roll=0.0, yaw=0.0):
     """Head frame: f forward (nose), u up, s = u x f (points to camera side)."""
     f0 = REST_F
@@ -400,6 +461,7 @@ def make_pose(name):
     tail = [V((0.43, 0, 0.66)), V((0.47, 0, 0.58)), V((0.485, 0, 0.46)), V((0.48, 0, 0.35))]
     M = Matrix.Identity(4)
     frame = 0
+    jaw, drool, cam = 0.0, False, "side"
 
     if name == "standing":
         hp["pitch"] = 4.0
@@ -418,6 +480,53 @@ def make_pose(name):
         ears = {"near": (0.75, 0.6, -0.25), "far": (0.75, 0.6, -0.2)}
         tail = [V((0.43, 0, 0.66)), V((0.49, 0, 0.60)), V((0.53, -0.03, 0.50)),
                 V((0.52, -0.08, 0.40))]
+    elif name.split("-")[0] in ("rest", "tonic", "clonic") and name != "rest":
+        # ---- lying flat on her right side (lateral recumbency), seen from above
+        kind = name.split("-")[0]
+        frame = int(name.split("-")[1]) - 1 if "-" in name else 0
+        if kind == "rest":           # relaxed, legs loosely flexed; rest-2 = tiny tremor
+            tw = frame
+            fn, ff = (58 + 2 * tw, 20 - 3 * tw), (52, 16)
+            hn, hf = (-50 - 2 * tw, 20 + 3 * tw), (-44, 16)
+            hc = V((-0.64, 0.05, 0.72))
+            hp.update(pitch=32.0 + 1.5 * tw, roll=0.0)
+            ears = {"near": (0.95, 0.15, 0.05 + 0.1 * tw), "far": (0.9, 0.2, 0.1)}
+            n1_off = V((-0.02, 0.03, -0.01))
+            jaw, drool = 0.0, False
+        else:
+            if kind == "tonic":      # rigid extension + strong opisthotonos
+                fn, ff = (28, -12), (36, -10)
+                hn, hf = (-22, -26), (-30, -24)
+                hc = V((-0.46, 0.04, 1.04))
+                hp.update(pitch=122.0)
+                jaw = 12.0
+            else:                    # clonic paddling, 3 phases of a running cycle
+                ph = math.radians(120 * frame)
+                phf = ph + math.radians(55)
+                fn = (48 + 26 * math.sin(ph), 20 + 30 * math.cos(ph))
+                ff = (48 + 26 * math.sin(phf), 20 + 30 * math.cos(phf))
+                qh, qf = ph + math.pi, phf + math.pi
+                hn = (-32 + 24 * math.sin(qh), 18 + 24 * math.cos(qh))
+                hf = (-32 + 24 * math.sin(qf), 18 + 24 * math.cos(qf))
+                hc = V((-0.48, 0.04, 1.01))
+                hp.update(pitch=[112.0, 108.0, 114.0][frame])
+                jaw = [22.0, 0.0, 18.0][frame]
+            ears = {"near": (0.95, 0.12, 0.2), "far": (0.95, 0.15, 0.1)}
+            n1_off = V((-0.05, 0.02, -0.01))
+            drool = True
+        fore_a["near"], fore_a["far"] = fore_angles(*fn), fore_angles(*ff)
+        hind_a["near"], hind_a["far"] = hind_angles(*hn), hind_angles(*hf)
+        fy["near"], fy["far"] = (-0.085, -0.02), (0.085, 0.14)
+        hy["near"], hy["far"] = (-0.085, -0.03), (0.085, 0.14)
+        tail = [V((0.43, 0, 0.66)), V((0.50, 0.03, 0.62)), V((0.60, 0.08, 0.57)),
+                V((0.69, 0.11, 0.52))]
+        # full 90 deg roll onto the right (+y) side: spine -> +y (away from the
+        # high camera, top of image), legs -> -y (bottom of image)
+        # and turned 10 deg on the floor (head nearer the viewer) so she can't be
+        # mistaken for a standing/leaping calf seen side-on
+        M = (Matrix.Rotation(math.radians(13), 4, "Z") @ Matrix.Translation(V((0, -0.6, 0))) @
+             Matrix.Rotation(math.radians(-90), 4, "X"))
+        cam = "high"
     elif name.startswith("side"):
         frame = int(name.split("-")[1]) - 1
         ph = [0.0, 1.0, -1.0][frame]           # paddle phase
@@ -442,7 +551,11 @@ def make_pose(name):
         M = Matrix.Translation(V((0, -0.55, 0))) @ Matrix.Rotation(math.radians(-75), 4, "X")
 
     f, s, u = head_axes(**hp)
-    J = {"hc": hc, "f": f, "s": s, "u": u, "M": M, "ears": ears, "frame": frame}
+    J = {"hc": hc, "f": f, "s": s, "u": u, "M": M, "ears": ears, "frame": frame,
+         "jaw": jaw, "drool": drool, "cam": cam,
+         # where along the neck the IV anchor sits (clear of the ear when arched)
+         "neck_t": 0.55 if cam == "side" else (0.72 if name.startswith("rest") else 0.5),
+         "neck_v": 0.035 if cam == "side" else (0.045 if name.startswith("rest") else 0.1)}
     J["hb"] = hc - 0.07 * f - 0.05 * u
     J["n0"] = V((-0.33, 0.0, 0.68))
     J["n1"] = (J["n0"] + J["hb"]) * 0.5 + n1_off
@@ -484,6 +597,19 @@ def head_quat(J):
     return Matrix((J["f"], J["s"], J["u"])).transposed().to_quaternion()
 
 
+JAW_HINGE = (0.02, 0.0, -0.06)
+
+
+def jaw_rot(J):
+    """Rotation opening the lower jaw by J['jaw'] degrees about the head's side axis."""
+    return Matrix.Rotation(math.radians(J.get("jaw", 0.0)), 3, J["s"])
+
+
+def jaw_pt(J, a, b, c):
+    h = head_pt(J, *JAW_HINGE)
+    return h + jaw_rot(J) @ (head_pt(J, a, b, c) - h)
+
+
 def _elem(mb, kind, co, r, **kw):
     e = mb.elements.new(type=kind)
     e.co = co
@@ -520,11 +646,21 @@ def build_metaball(J):
     tapered(mb, J["n1"], J["hb"], 0.092, 0.085)
     # head
     q = head_quat(J)
-    for (a, b, c), r in HEAD_PARTS:
+    parts = list(HEAD_PARTS)
+    open_mouth = J.get("jaw", 0.0) > 0.5
+    if open_mouth:   # split muzzle into upper lip + a hinged lower jaw
+        parts[2] = ((0.185, 0, -0.03), (0.058, 0.068, 0.05))
+    for (a, b, c), r in parts:
         r = tuple(HS * x for x in r)
         m = max(r)
         _elem(mb, "ELLIPSOID", head_pt(J, a, b, c), m, size_x=r[0] / m,
               size_y=r[1] / m, size_z=r[2] / m, rotation=q)
+    if open_mouth:
+        qj = jaw_rot(J).to_quaternion() @ q
+        r = (0.085 * HS, 0.055 * HS, 0.03 * HS)
+        m = max(r)
+        _elem(mb, "ELLIPSOID", jaw_pt(J, 0.135, 0, -0.088), m, size_x=r[0] / m,
+              size_y=r[1] / m, size_z=r[2] / m, rotation=qj)
     # legs
     for key, pts in J["legs"].items():
         R = FORE_R if key.startswith("fore") else HIND_R
@@ -575,7 +711,7 @@ def _seg_frame(a, b):
     return np.array(a), np.array([x, y, z]).T
 
 
-def bones(J):
+def bones(J, with_jaw=False):
     """List of (seg_a, seg_b, radius, origin, R3x3) used for skin-like mapping."""
     out = []
     ident = np.eye(3)
@@ -595,11 +731,18 @@ def bones(J):
     for i in range(3):
         o, Rm = _seg_frame(t[i], t[i + 1])
         out.append((t[i], t[i + 1], 0.02, o, Rm))
+    if not with_jaw:
+        return out
+    # lower jaw (only used for open-mouth poses)
+    Rj = np.array(jaw_rot(J)) @ Rh
+    out.append((jaw_pt(J, 0.06, 0, -0.085), jaw_pt(J, 0.2, 0, -0.085), 0.03,
+                np.array(head_pt(J, *JAW_HINGE)), Rj))
     return out
 
 
 def rest_coords(P, J, Jrest):
-    bp, br = bones(J), bones(Jrest)
+    wj = J.get("jaw", 0.0) > 0.5
+    bp, br = bones(J, wj), bones(Jrest, wj)
     n = len(P)
     acc = np.zeros((n, 3))
     wsum = np.zeros(n)
@@ -613,8 +756,8 @@ def rest_coords(P, J, Jrest):
         mapped = ((P - o) @ R) @ R0.T + o0
         acc += w[:, None] * mapped
         wsum += w
-        if k == 3:
-            head_w = w
+        if k == 3 or (wj and k == len(bp) - 1):
+            head_w = head_w + w
     return acc / wsum[:, None], head_w / wsum
 
 
@@ -764,6 +907,18 @@ def small_parts(J):
         nax = frame_from(f, u)
         parts.append((sphere_mesh("nos_" + side, (0.012, 0.011, 0.017), nc, nax, 12, 8),
                       "nostril", False, False))
+    if J.get("jaw", 0.0) > 0.5:
+        mc = jaw_pt(J, 0.15, 0, -0.058)
+        mc = (mc + head_pt(J, 0.15, 0, -0.055)) * 0.5
+        parts.append((sphere_mesh("mouth", (0.07 * HS, 0.05 * HS, 0.02 * HS), mc,
+                                  frame_from(f, u)), "mouth", False, False))
+    if J.get("drool"):
+        lip = (jaw_pt if J.get("jaw", 0) > 0.5 else head_pt)(J, 0.13, 0.055, -0.08)
+        # hang toward the floor / image-down (world -z and toward the viewer)
+        down = (J["M"].to_3x3().inverted() @ V((0, -0.6, -1))).normalized()
+        dv = down
+        parts.append((sphere_mesh("drool", (0.055, 0.016, 0.016), lip + dv * 0.04,
+                                  frame_from(dv, s)), "drool", True, False))
     for key, pts in J["legs"].items():
         a, b = pts[4], pts[5]
         parts.append((cone_mesh("hoof_" + key, a, b + (b - a).normalized() * 0.004, 0.029, 0.036),
@@ -835,22 +990,36 @@ def build_pose(name, mats, Jrest):
     bmesh.ops.create_circle(bm, cap_ends=True, segments=48, radius=1.0)
     bm.to_mesh(sh_me)
     bm.free()
-    sh_me.materials.append(mats["shadow"])
+    sh_me.materials.append(mats["shadow" if J["cam"] == "side" else "shadow_high"])
     sh = link(bpy.data.objects.new("ContactShadow", sh_me))
     sh.location = ((xmin + xmax) / 2, (ymin + ymax) / 2, 0.002)
     sh.scale = ((xmax - xmin) / 2 * 1.08 + 0.06, max((ymax - ymin) / 2 * 1.1, 0.16) + 0.04, 1)
     sh.visible_shadow = False
     objs.append(sh)
+    if J["cam"] == "high":
+        # softer ambient ellipse + a real cast shadow caught on an invisible floor
+        sh.scale = (sh.scale[0] * 0.9, sh.scale[1] * 0.75, 1)
+        gp_me = bpy.data.meshes.new("ground")
+        bm = bmesh.new()
+        bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=2.5)
+        bm.to_mesh(gp_me)
+        bm.free()
+        gp_me.materials.append(mats["ground"])
+        gp = link(bpy.data.objects.new("GroundCatcher", gp_me))
+        gp.location = (0, 0, 0.001)
+        gp.visible_shadow = False
+        objs.append(gp)
     return J, objs
 
 
 def anchors_for(J, sc, cam):
     M = J["M"]
     n0, hb = J["n0"], J["hb"]
-    p = n0.lerp(hb, 0.55)                 # mid-neck (base of neck is inside the chest)
+    p = n0.lerp(hb, J.get("neck_t", 0.55))   # mid-neck (base of neck is inside the chest)
     axis = (hb - n0).normalized()
     ventral = (V((0, 0, -1)) - axis * (-axis.z)).normalized()
-    neck_pt = p + V((0, -0.085, 0)) + ventral * 0.035     # visible (-y) side, jugular groove
+    # visible (-y) side of the neck, toward the throat (jugular groove)
+    neck_pt = p + V((0, -0.085, 0)) + ventral * J.get("neck_v", 0.035)
     head_pt_c = J["hc"] + 0.08 * J["f"]
 
     def px(pt):
@@ -861,7 +1030,7 @@ def anchors_for(J, sc, cam):
     return {"neck": px(neck_pt), "head": px(head_pt_c), "groundY": round((1 - g.y) * H, 1)}
 
 
-def save(sc, stem):
+def save(sc, stem, webp_quality=88):
     img = bpy.data.images["Render Result"]
     ims = sc.render.image_settings
     ims.file_format = "PNG"
@@ -872,21 +1041,24 @@ def save(sc, stem):
     img.save_render(png, scene=sc)
     ims.file_format = "WEBP"
     ims.color_mode = "RGBA"
-    ims.quality = 88
+    ims.quality = webp_quality
     webp = os.path.join(WEB_DIR, stem + ".webp")
     img.save_render(webp, scene=sc)
     ims.file_format = "PNG"
     return png, webp
 
 
-POSES = ["side-1", "side-2", "side-3", "sternal", "standing"]
+WEBP_Q_HIGH = 80
+
+POSES = ["rest-1", "rest-2", "tonic", "clonic-1", "clonic-2", "clonic-3",
+         "sternal", "standing"]
 
 
 def main():
     os.makedirs(RENDER_DIR, exist_ok=True)
     os.makedirs(WEB_DIR, exist_ok=True)
     sc = reset_scene()
-    cam = setup_camera_and_light(sc)
+    cams = setup_camera_and_light(sc)
     mats = {
         "body": body_material(),
         "outline": outline_material(),
@@ -897,16 +1069,27 @@ def main():
         "nostril": flat_material("Nostril", (0.45, 0.2, 0.24)),
         "hoof": toon_material("Hoof", (0.22, 0.2, 0.22), shade_tint=(0.45, 0.45, 0.55)),
         "shadow": shadow_material(),
+        "shadow_high": shadow_material(stepped=True),
+        "mouth": flat_material("Mouth", (0.45, 0.12, 0.16)),
+        "drool": toon_material("Drool", (0.80, 0.90, 1.0)),
+        "ground": cast_shadow_material(),
     }
     Jrest = make_pose("rest")
-    only = os.environ.get("CALF_ONLY")
+    only = [x for x in os.environ.get("CALF_ONLY", "").split(",") if x]
     anchors = {}
     for name in POSES:
         J, objs = build_pose(name, mats, Jrest)
+        cam = cams[J["cam"]]
+        sc.camera = cam
+        cams["sun"].rotation_quaternion = SUN_DIRS[J["cam"]].normalized().to_track_quat("-Z", "Y")
+        cams["sun"].data.angle = math.radians(2 if J["cam"] == "side" else 0.5)
+        # the floor shadow is soft; extra samples keep it smooth (and the WebP small)
+        sc.eevee.taa_render_samples = 24 if J["cam"] == "side" else 48
         anchors[name] = anchors_for(J, sc, cam)
-        if not only or only == name:
+        anchors[name]["camera"] = J["cam"]
+        if not only or name in only:
             bpy.ops.render.render(write_still=False)
-            png, webp = save(sc, "calf-" + name)
+            png, webp = save(sc, "calf-" + name, 88 if J["cam"] == "side" else WEBP_Q_HIGH)
             print("RENDERED", png, os.path.getsize(png), webp, os.path.getsize(webp))
         for ob in objs:
             data = ob.data

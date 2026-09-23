@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { Status } from '../engine/physiology';
+import anchorsJson from '../../art/calf-anchors.json';
 
 // Calf illustration. Pose follows patient status:
 // seizing/critical → lying on her side; stable → lying upright, head up; healthy → standing.
@@ -22,12 +23,14 @@ interface Props {
 }
 
 /** Where an IV catheter goes (jugular vein on the neck), per pose, in the 400×260 viewBox. */
-// From art/calf-anchors.json (1200×780 px) divided by 3.
-export const NECK_ANCHOR: Record<'side' | 'sternal' | 'standing', [number, number]> = {
-  side: [126.5, 185.2],
-  sternal: [126.6, 165.6],
-  standing: [125.3, 107.1],
-};
+type Anchor = { neck: [number, number]; head: [number, number]; groundY: number; camera?: 'high' | 'side' };
+const ANCHORS = anchorsJson as unknown as Record<string, Anchor>;
+
+/** IV site (jugular groove) for a render frame, in the 400×260 viewBox (renders are 1200×780). */
+export function neckAnchor(frame: string): [number, number] {
+  const a = ANCHORS[frame] ?? ANCHORS['sternal'];
+  return [a.neck[0] / 3, a.neck[1] / 3];
+}
 
 export function poseFor(status: Status): 'side' | 'sternal' | 'standing' {
   return status === 'seizing' || status === 'critical' ? 'side' : status === 'stable' ? 'sternal' : 'standing';
@@ -62,7 +65,7 @@ export function IVLine({ iv, neck, reduceMotion }: { iv: IVState; neck: [number,
 
 // Calf art: 2D renders of an original 3D model (Blender, see art/). 1200×780 images drawn at 400×260.
 const ART = (name: string) => `${import.meta.env.BASE_URL}art/calf-${name}.webp`;
-const SIDE_FRAMES = ['side-1', 'side-2', 'side-3'];
+const SEIZURE_FRAMES = ['rest-1', 'rest-2', 'tonic', 'clonic-1', 'clonic-2', 'clonic-3'];
 
 function Straw() {
   const blades = [];
@@ -92,51 +95,105 @@ function Straw() {
   );
 }
 
+/** Straw bedding seen from above (for the high-camera, lying-down frames). */
+function StrawFloor() {
+  const blades = [];
+  for (let i = 0; i < 170; i++) {
+    const x = 20 + ((i * 53) % 380);
+    const y = 36 + ((i * 29) % 226);
+    const len = 10 + ((i * 7) % 12);
+    const ang = ((i * 41) % 180) - 90;
+    blades.push(
+      <line key={i} x1={x} y1={y}
+        x2={x + len * Math.cos((ang * Math.PI) / 180)} y2={y + len * 0.55 * Math.sin((ang * Math.PI) / 180)}
+        stroke={i % 3 ? '#d9b44a' : i % 5 ? '#c49a2c' : '#e6c874'} stroke-width="2" stroke-linecap="round" opacity="0.9" />,
+    );
+  }
+  return (
+    <g>
+      <rect x="0" y="0" width="400" height="260" fill="#ecd48a" />
+      <rect x="0" y="0" width="400" height="44" fill="var(--barn)" />
+      <line x1="0" y1="44" x2="400" y2="44" stroke="var(--barn-line)" stroke-width="3" />
+      {blades}
+    </g>
+  );
+}
+
 if (typeof window !== 'undefined') {
-  for (const n of [...SIDE_FRAMES, 'sternal', 'standing']) {
+  for (const n of [...SEIZURE_FRAMES, 'sternal', 'standing']) {
     const img = new Image();
     img.src = ART(n);
   }
 }
 
-function useFrame(active: boolean, count: number, ms: number) {
-  const [f, setF] = useState(0);
+/**
+ * Seizure episode cycle for a calf down on her side: trembling rest → brief rigid (tonic) arch →
+ * rhythmic paddling with jaw chomping (clonic) → rest. Based on veterinary descriptions of
+ * generalized seizures in recumbent ruminants. No flashing: frames differ only in pose.
+ */
+export function seizureTimeline(critical: boolean) {
+  const restMs = critical ? 3200 : 7000;
+  const tonicMs = 1600;
+  const clonicMs = critical ? 5200 : 3200;
+  return { restMs, tonicMs, clonicMs, total: restMs + tonicMs + clonicMs };
+}
+
+export function seizureFrameAt(tMs: number, critical: boolean): string {
+  const { restMs, tonicMs, total } = seizureTimeline(critical);
+  const t = tMs % total;
+  if (t < restMs) return Math.floor(t / 170) % 2 ? 'rest-2' : 'rest-1';
+  if (t < restMs + tonicMs) return 'tonic';
+  return `clonic-${(Math.floor((t - restMs - tonicMs) / 190) % 3) + 1}`;
+}
+
+function useSeizureFrame(active: boolean, critical: boolean): string {
+  const [frame, setFrame] = useState('rest-1');
   useEffect(() => {
-    if (!active) return;
-    const id = setInterval(() => setF((x) => (x + 1) % count), ms);
+    if (!active) { setFrame('rest-1'); return; }
+    const t0 = performance.now();
+    const id = setInterval(() => {
+      if (!document.hidden) setFrame(seizureFrameAt(performance.now() - t0, critical));
+    }, 60);
     return () => clearInterval(id);
-  }, [active, count, ms]);
-  return active ? f : 0;
+  }, [active, critical]);
+  return active ? frame : 'rest-1';
 }
 
 const LABEL: Record<Status, string> = {
-  critical: 'Juniper is lying on her side having severe, frequent seizures.',
-  seizing: 'Juniper is lying on her side, trembling, with repeated seizures.',
+  critical: 'Juniper is lying on her side having severe, frequent seizures: her body goes stiff with her head arched back, then her legs paddle and her jaw chomps.',
+  seizing: 'Juniper is lying on her side, trembling. Every so often a seizure hits: her body goes stiff with her head arched back, then her legs paddle and her jaw chomps.',
   stable: 'Juniper is lying upright with her head raised. No seizures.',
   healthy: 'Juniper is standing up and alert.',
 };
 
 export function Calf({ status, reduceMotion, iv }: Props) {
   const pose = poseFor(status);
-  const frame = useFrame(pose === 'side' && !reduceMotion, 3, status === 'critical' ? 260 : 380);
-  const src = pose === 'side' ? ART(SIDE_FRAMES[frame]) : ART(pose);
+  const seizureFrame = useSeizureFrame(pose === 'side' && !reduceMotion, status === 'critical');
+  const frameName = pose === 'side' ? seizureFrame : pose;
+  const src = ART(frameName);
   const cls = ['calf', `calf-${status}`, reduceMotion ? 'no-motion' : ''].join(' ');
   return (
     <svg class={cls} viewBox="30 40 350 220" role="img"
       aria-label={`${LABEL[status]}${iv ? ` An IV line runs to her neck from a bag of ${iv.label}${iv.running ? ', dripping' : ''}.` : ''}`}>
-      <rect x="0" y="0" width="400" height="260" fill="var(--barn)" />
-      <g stroke="var(--barn-line)" stroke-width="2">
-        <line x1="0" y1="60" x2="400" y2="60" />
-        <line x1="0" y1="120" x2="400" y2="120" />
-        <line x1="0" y1="180" x2="400" y2="180" />
-      </g>
-      <Straw />
+      {ANCHORS[frameName]?.camera === 'high' ? (
+        <StrawFloor />
+      ) : (
+        <>
+          <rect x="0" y="0" width="400" height="260" fill="var(--barn)" />
+          <g stroke="var(--barn-line)" stroke-width="2">
+            <line x1="0" y1="60" x2="400" y2="60" />
+            <line x1="0" y1="120" x2="400" y2="120" />
+            <line x1="0" y1="180" x2="400" y2="180" />
+          </g>
+          <Straw />
+        </>
+      )}
       <g class="calf-figure">
         <g class="breath">
           <image href={src} x="0" y="0" width="400" height="260" />
         </g>
       </g>
-      {iv && <IVLine iv={iv} neck={NECK_ANCHOR[pose]} reduceMotion={reduceMotion} />}
+      {iv && <IVLine iv={iv} neck={neckAnchor(frameName)} reduceMotion={reduceMotion} />}
     </svg>
   );
 }

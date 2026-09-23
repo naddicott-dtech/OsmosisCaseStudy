@@ -203,8 +203,6 @@ thead th { font-size: 0.85rem; color: var(--muted); }
 .calf { display: block; width: 100%; height: auto; }
 .breath { transform-box: fill-box; transform-origin: 50% 88%; animation: breathe 2.4s ease-in-out infinite; }
 .calf-seizing .breath, .calf-critical .breath { animation-duration: 1.1s; }
-.calf-seizing .calf-figure { animation: tremor 0.18s linear infinite; }
-.calf-critical .calf-figure { animation: tremor 0.14s linear infinite; }
 .legs-paddle { transform-box: fill-box; transform-origin: 50% 0; animation: paddle 3.2s ease-in-out infinite; }
 .calf-critical .legs-paddle { animation-duration: 2.2s; }
 .head-bob { transform-box: fill-box; transform-origin: 80% 80%; animation: bob 4s ease-in-out infinite; }

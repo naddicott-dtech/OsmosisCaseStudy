@@ -1,36 +1,75 @@
 {
-  "side-1": {
+  "rest-1": {
     "neck": [
-      379.5,
-      555.6
+      358.3,
+      469.0
     ],
     "head": [
-      258.0,
-      580.5
+      245.3,
+      487.5
     ],
-    "groundY": 686.4
+    "groundY": 499.2,
+    "camera": "high"
   },
-  "side-2": {
+  "rest-2": {
     "neck": [
-      379.3,
-      551.8
+      358.3,
+      469.6
     ],
     "head": [
-      257.6,
-      575.5
+      244.9,
+      486.7
     ],
-    "groundY": 686.4
+    "groundY": 499.2,
+    "camera": "high"
   },
-  "side-3": {
+  "tonic": {
     "neck": [
-      379.6,
-      555.9
+      344.4,
+      417.3
     ],
     "head": [
-      258.3,
-      581.3
+      316.6,
+      295.8
     ],
-    "groundY": 686.4
+    "groundY": 499.2,
+    "camera": "high"
+  },
+  "clonic-1": {
+    "neck": [
+      347.5,
+      426.5
+    ],
+    "head": [
+      304.3,
+      312.5
+    ],
+    "groundY": 499.2,
+    "camera": "high"
+  },
+  "clonic-2": {
+    "neck": [
+      348.6,
+      426.3
+    ],
+    "head": [
+      302.1,
+      313.9
+    ],
+    "groundY": 499.2,
+    "camera": "high"
+  },
+  "clonic-3": {
+    "neck": [
+      347.0,
+      426.5
+    ],
+    "head": [
+      305.5,
+      311.9
+    ],
+    "groundY": 499.2,
+    "camera": "high"
   },
   "sternal": {
     "neck": [
@@ -41,7 +80,8 @@
       281.9,
       452.9
     ],
-    "groundY": 686.4
+    "groundY": 686.4,
+    "camera": "side"
   },
   "standing": {
     "neck": [
@@ -52,6 +92,7 @@
       277.8,
       266.2
     ],
-    "groundY": 686.4
+    "groundY": 686.4,
+    "camera": "side"
   }
 }

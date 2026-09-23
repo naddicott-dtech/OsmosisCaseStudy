@@ -22,8 +22,8 @@ export const PATIENT = {
 export const HISTORY_SPEAKER = 'Dana, Juniper\'s owner (first year raising a calf for 4-H)';
 
 export const HISTORY = [
-  '"Thanks for coming out so fast, Doc. We bought Juniper as a bottle calf about three weeks ago. She was doing great until Monday, when she got the scours. Runny, watery diarrhea, all over the pen."',
-  '"I read up online, and everything said the big danger with diarrhea is dehydration. So I\'ve been really on top of keeping her hydrated. I also read that you shouldn\'t give milk to a calf with diarrhea, so we stopped her bottles. I made sure she always had a big bucket of fresh, clean water. She\'s been so thirsty! I\'ve refilled that bucket five or six times since yesterday."',
+  '"Thanks for coming out so fast, Doc. We bought Juniper about three weeks ago. She\'s a bottle calf, so she\'s not with her mother: we feed her milk from a big bottle twice a day. She was doing great until Monday, when she got the scours. That\'s what farmers call diarrhea in calves: runny, watery, all over the pen."',
+  '"I read up online, and everything said the big danger with diarrhea is dehydration. So I\'ve been really on top of keeping her hydrated. I also read that you shouldn\'t feed milk to a calf with diarrhea, so we stopped her milk bottles and gave her water instead. I made sure she always had a big bucket of fresh, clean water. She\'s been so thirsty! I\'ve refilled that bucket five or six times since yesterday."',
   '"Last night she was shivering, so my daughter put her old horse blanket on her and we moved her into the shed out of the wind."',
   '"This morning she was wobbly and bumped her head on the gate trying to get up. Now she won\'t stand at all. She\'s lying on her side trembling, and every few minutes her legs paddle and her head pulls back. Is she going to be okay?"',
 ];
@@ -96,7 +96,7 @@ export interface ChainCard {
 
 export const CHAIN_CARDS: ChainCard[] = [
   { id: 'c1', order: 0, text: 'Diarrhea removes both water AND sodium from Juniper\'s body.' },
-  { id: 'c2', order: 1, text: 'Trying to rehydrate her, the owner replaces the lost fluid with plain water, which has no sodium, and stops her milk.' },
+  { id: 'c2', order: 1, text: 'Trying to rehydrate her, the owner stops her milk (which contains salts) and gives her plain water instead. The water replaces lost fluid but not lost sodium.' },
   { id: 'c3', order: 2, text: 'Blood sodium falls, so blood becomes hypotonic (less concentrated than the inside of brain cells).' },
   { id: 'c4', order: 3, text: 'By osmosis, water moves out of the blood and into brain cells, across the membrane and through aquaporins.' },
   { id: 'c5', order: 4, text: 'Brain cells swell, and pressure inside the skull rises.' },
@@ -163,7 +163,7 @@ export const OUTCOME_TEXT: Record<string, { title: string; body: string }> = {
   },
   success: {
     title: 'Seizures stop',
-    body: 'Raising blood sodium made the blood slightly more concentrated, so water moved OUT of the swollen brain cells into the blood. Pressure dropped below the seizure threshold. Juniper lifts her head. The vet will now finish correcting her sodium slowly over the next few days with electrolyte fluids and milk.',
+    body: 'Raising blood sodium made the blood slightly more concentrated, so water moved OUT of the swollen brain cells into the blood. Pressure dropped below the seizure threshold. Juniper lifts her head. The vet will now finish correcting her sodium slowly over the next few days with electrolyte drinks and her normal milk feedings.',
   },
   overcorrected: {
     title: 'Seizures stop — but sodium rose too fast',
