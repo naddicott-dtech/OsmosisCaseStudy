@@ -1,6 +1,8 @@
 # Osmosis Case Study — build plan
 
-Drafted 2026-09-23. Planning only: nothing is built or deployed yet. Items marked **Decision needed** are Neal's to make.
+Drafted 2026-09-23. **Status (2026-09-23 evening):** slices 0–6 built as v1.0 for classroom use on 2026-09-24. Analytics/Replit deferred. See README.md for usage and MODEL.md for the science. Defaults chosen by the assistant, pending Neal's review: patient named Juniper; Ψ calculator labeled optional extension; runner case is the final Check item in the report; submission by copy/download into Canvas.
+
+Remaining **Decision needed** items below are still open for later editions.
 
 ## 1. Purpose and fit
 
