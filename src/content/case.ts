@@ -31,6 +31,8 @@ export const HISTORY = [
 export const EXAM_TOOLS = [
   {
     id: 'thermometer',
+    image: 'exam-thermometer',
+    alt: 'A digital rectal thermometer reading 38.9 degrees Celsius.',
     label: 'Thermometer',
     icon: '🌡️',
     finding: 'Rectal temperature 38.9 °C (typical calf range 38.5–39.5 °C). Normal, even under the blanket.',
@@ -38,6 +40,8 @@ export const EXAM_TOOLS = [
   },
   {
     id: 'stethoscope',
+    image: 'exam-stethoscope',
+    alt: 'A stethoscope pressed against the left side of Juniper\'s chest, just behind her elbow, where the heart is loudest.',
     label: 'Stethoscope',
     icon: '🩺',
     finding: 'Heart rate 148 beats/min (typical 100–140). Breathing 44 breaths/min (typical 30–40). Lungs sound clear.',
@@ -45,6 +49,8 @@ export const EXAM_TOOLS = [
   },
   {
     id: 'skin',
+    image: 'exam-eye',
+    alt: 'Close-up of Juniper\'s left eye. It is slightly sunken, with a small gap between the eyeball and the lower eyelid.',
     label: 'Skin tent & eyes',
     icon: '✋',
     finding: 'A pinch of neck skin takes 4 seconds to flatten (normal under 2 s). Eyes slightly sunken. Signs of dehydration.',
@@ -52,6 +58,8 @@ export const EXAM_TOOLS = [
   },
   {
     id: 'head',
+    image: 'exam-head',
+    alt: 'Juniper\'s head from the side. There is a small scrape just above her left eye, with no swelling.',
     label: 'Head & eyes check',
     icon: '🔦',
     finding: 'A small scrape above her left eye. No swelling, no soft spots, and no blood in the ears or nose. Both pupils are the same size and react to light. Her eyes flick side to side during the seizures.',
@@ -59,9 +67,11 @@ export const EXAM_TOOLS = [
   },
   {
     id: 'blood',
+    image: 'exam-blood',
+    alt: 'A red-topped blood tube, about three-quarters full, labeled Juniper 9/24/26.',
     label: 'Blood sample',
     icon: '💉',
-    finding: 'Blood drawn from the jugular vein and sent to the analyzer. Results are on the Lab Report.',
+    finding: 'Blood drawn from the jugular vein into a red-top tube. The serum goes to the analyzer. Results are on the Lab Report below.',
     flag: 'normal' as const,
   },
 ];

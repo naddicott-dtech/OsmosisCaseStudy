@@ -35,6 +35,20 @@ test('a student can complete the whole case and export a report', async ({ page,
   // Exam & labs
   for (const t of ['Thermometer', 'Stethoscope', 'Skin tent & eyes', 'Head & eyes check', 'Blood sample']) {
     await page.getByRole('button', { name: new RegExp(t) }).click();
+    const card = page.getByRole('dialog');
+    await expect(card).toBeVisible();
+    await expect(card.getByRole('heading', { name: t })).toBeVisible();
+    if (t === 'Thermometer') {
+      await expect(card.locator('text.lcd-text')).toHaveText('38.9 °C');
+      await shot(page, '2-exam-thermometer');
+    }
+    if (t === 'Blood sample') {
+      await expect(card.locator('text.label-text').first()).toHaveText('Juniper');
+      await shot(page, '2-exam-blood');
+    }
+    if (t === 'Skin tent & eyes') await shot(page, '2-exam-eye');
+    await card.getByRole('button', { name: 'Close' }).click();
+    await expect(card).toBeHidden();
   }
   const flags: Record<string, string> = {
     na: 'low', cl: 'low', k: 'high', hco3: 'low', glu: 'normal', bun: 'high', pcv: 'high', osm: 'low',

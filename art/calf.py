@@ -33,6 +33,7 @@ HIGH_GROUND_FRAC = 0.64     # body-centre ground point at 64% of height (high ca
 ORTHO_SCALE = 2.45          # metres across the image width
 OUTLINE_W = 0.0085          # inverted-hull outline thickness (m)
 
+MB_RES = 0.0085             # metaball mesh resolution (m); exam.py lowers it for close-ups
 STIFF = 8.0                                    # metaball stiffness
 SURF = math.sqrt(1.0 - (0.6 / STIFF) ** (1 / 3))  # surface radius / element radius
 
@@ -634,8 +635,8 @@ def tapered(mb, a, b, ra, rb):
 
 def build_metaball(J):
     mb = bpy.data.metaballs.new("CalfMB")
-    mb.resolution = 0.0085
-    mb.render_resolution = 0.0085
+    mb.resolution = MB_RES
+    mb.render_resolution = MB_RES
     mb.threshold = 0.6
     ob = link(bpy.data.objects.new("CalfMB", mb))
     for c, r in TORSO:
@@ -1059,21 +1060,7 @@ def main():
     os.makedirs(WEB_DIR, exist_ok=True)
     sc = reset_scene()
     cams = setup_camera_and_light(sc)
-    mats = {
-        "body": body_material(),
-        "outline": outline_material(),
-        "ear": toon_material("Ear", (0.10, 0.10, 0.14), shade_tint=(0.5, 0.5, 0.6)),
-        "earin": toon_material("EarInner", (0.93, 0.62, 0.64)),
-        "eye": flat_material("Eye", (0.045, 0.03, 0.035)),
-        "white": flat_material("Highlight", (1, 1, 1)),
-        "nostril": flat_material("Nostril", (0.45, 0.2, 0.24)),
-        "hoof": toon_material("Hoof", (0.22, 0.2, 0.22), shade_tint=(0.45, 0.45, 0.55)),
-        "shadow": shadow_material(),
-        "shadow_high": shadow_material(stepped=True),
-        "mouth": flat_material("Mouth", (0.45, 0.12, 0.16)),
-        "drool": toon_material("Drool", (0.80, 0.90, 1.0)),
-        "ground": cast_shadow_material(),
-    }
+    mats = make_materials()
     Jrest = make_pose("rest")
     only = [x for x in os.environ.get("CALF_ONLY", "").split(",") if x]
     anchors = {}
@@ -1101,4 +1088,23 @@ def main():
     print("ANCHORS", json.dumps(anchors))
 
 
-main()
+def make_materials():
+    return {
+        "body": body_material(),
+        "outline": outline_material(),
+        "ear": toon_material("Ear", (0.10, 0.10, 0.14), shade_tint=(0.5, 0.5, 0.6)),
+        "earin": toon_material("EarInner", (0.93, 0.62, 0.64)),
+        "eye": flat_material("Eye", (0.045, 0.03, 0.035)),
+        "white": flat_material("Highlight", (1, 1, 1)),
+        "nostril": flat_material("Nostril", (0.45, 0.2, 0.24)),
+        "hoof": toon_material("Hoof", (0.22, 0.2, 0.22), shade_tint=(0.45, 0.45, 0.55)),
+        "shadow": shadow_material(),
+        "shadow_high": shadow_material(stepped=True),
+        "mouth": flat_material("Mouth", (0.45, 0.12, 0.16)),
+        "drool": toon_material("Drool", (0.80, 0.90, 1.0)),
+        "ground": cast_shadow_material(),
+    }
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,20 @@
+{
+  "thermometer": {
+    "display": {
+      "x": 289.0,
+      "y": 241.6,
+      "width": 195.7,
+      "height": 58.1,
+      "rotationDeg": 5.1
+    }
+  },
+  "blood": {
+    "label": {
+      "x": 240.1,
+      "y": 275.5,
+      "width": 181.4,
+      "height": 61.9,
+      "rotationDeg": -5.6
+    }
+  }
+}

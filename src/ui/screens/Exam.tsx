@@ -1,7 +1,9 @@
 import { EXAM_TOOLS, LABS, LAB_PROMPTS, labFlag } from '../../content/case';
 import { createPatient } from '../../engine/physiology';
 import { saved, update, goTo } from '../../state';
+import { useState } from 'preact/hooks';
 import { Calf } from '../Calf';
+import { ExamCard } from '../ExamCard';
 import { FlagPicker, Prompt, answered } from '../widgets';
 
 export function Exam() {
@@ -11,8 +13,12 @@ export function Exam() {
   const checked = s.labCheck.attempts > 0;
   const nCorrect = LABS.filter((l) => s.labFlags[l.id] === labFlag(l)).length;
 
-  const useTool = (id: string) =>
+  const [openTool, setOpenTool] = useState<string | null>(null);
+  const useTool = (id: string) => {
     update((st) => ({ toolsUsed: st.toolsUsed.includes(id) ? st.toolsUsed : [...st.toolsUsed, id] }));
+    setOpenTool(id);
+  };
+  const tool = EXAM_TOOLS.find((t) => t.id === openTool);
 
   const check = () =>
     update((st) => {
@@ -34,7 +40,7 @@ export function Exam() {
         </section>
         <section class="panel">
           <h3>Physical exam</h3>
-          <p class="muted">Use each tool. Findings are added to the chart.</p>
+          <p class="muted">Use each tool. Click a tool again to take another look. Findings are added to the chart.</p>
           <div class="tools">
             {EXAM_TOOLS.map((t) => (
               <button key={t.id} class={`tool ${s.toolsUsed.includes(t.id) ? 'used' : ''}`} onClick={() => useTool(t.id)}
@@ -44,6 +50,9 @@ export function Exam() {
               </button>
             ))}
           </div>
+          {tool && (
+            <ExamCard open={!!openTool} onClose={() => setOpenTool(null)} title={tool.label} image={tool.image} alt={tool.alt} finding={tool.finding} />
+          )}
           <ul class="findings" aria-live="polite">
             {EXAM_TOOLS.filter((t) => s.toolsUsed.includes(t.id)).map((t) => (
               <li key={t.id}><strong>{t.label}:</strong> {t.finding}</li>

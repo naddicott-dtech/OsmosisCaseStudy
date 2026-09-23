@@ -58,3 +58,29 @@ The calf model, patch pattern, materials and poses are original. They were gener
 - The high-camera floor shadow is a flat, semi-transparent brown. On a very dark app background it will barely show.
 - Metaball blending makes the tucked legs in the sternal pose soft and blobby rather than crisply jointed.
 - The source PNGs are about 260–370 KB each. Use the WebP copies (about 29–36 KB each) in the app.
+
+## Exam close-ups (`art/exam.py`)
+
+These are five 800×600 **opaque** close-ups in the same comic style. They reuse the calf model, toon materials and outline code by importing `calf.py`. `calf.py` now only renders when run directly, so importing it has no side effects, and its own outputs are unchanged.
+
+```sh
+/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --python art/exam.py
+# EXAM_ONLY=eye,head  renders a subset
+```
+
+| File | Content |
+|---|---|
+| `renders/exam-thermometer.png` / `public/art/exam-thermometer.webp` | Digital thermometer lying on a folded clean towel, with a **blank** grey-green LCD for the app's "38.9 °C" overlay |
+| `renders/exam-stethoscope.png` / `.webp` | Stethoscope chest piece held by a gloved hand on the calf's left chest wall, just behind the elbow and below a black patch, with the tubing running up out of frame |
+| `renders/exam-eye.png` / `.webp` | Left eye, mildly sunken: the eyeball sits back from the lids, with a small pink gap between the eyeball and the lower lid |
+| `renders/exam-head.png` / `.webp` | Head from the left, with a small pink abrasion (a few scratch lines) just above the eye and no swelling. A gloved hand holds a penlight shining toward the eye |
+| `renders/exam-blood.png` / `.webp` | Red-top serum tube, about 3/4 full of dark blood, lying on a steel tray with a gauze square. It has a **blank** white paper label band for the app's name/date overlay |
+| `exam-anchors.json` | Overlay rectangles in image pixels. `thermometer.display` and `blood.label` each give `{x, y, width, height, rotationDeg}`: `x, y` is the top-left of the unrotated box, and the box is rotated about its centre, clockwise-positive as in CSS `rotate()` |
+
+Backgrounds are emission planes with a warm gradient and soft, low-contrast, straw-like blotches. Outline width is scaled to the camera distance so the ink lines stay about 3–4 px thick. The penlight beam and tube plastic are semi-transparent emission.
+
+Limitations of the exam images:
+- **Eye:** the "sunken" look comes from a smaller, recessed eyeball, a slightly dropped lower lid and a pink crescent gap. It reads as a sign rather than as anatomy. The skin-tent inset was not made.
+- **Head:** the scrape sits on the edge of the black eye patch, so its pink shows well but there is little white hair around it. The penlight hand is a simple metaball glove, and the fingers are only suggested.
+- **Hands:** they are stylized mitten-like gloves. The stethoscope hand presses the chest piece with the fingertips rather than a realistic grip.
+- **Blood tube:** the tube lies on a tray rather than being held. At about 20 KB, its WebP is below the 30 KB target because the image is simple.
