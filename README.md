@@ -15,14 +15,14 @@ Not affiliated with ExploreLearning or any commercial product. The molecule visu
 | 3 Inside the Brain | Predict, then watch water cross BOTH through aquaporins and straight through the lipid bilayer as blood sodium falls; live tallies of water into and out of the brain | Predict / Practice |
 | 4 Mini-labs | Membrane chamber with preset solutions (bilayer only / aquaporins / leaky), where net water flow emerges from a headcount of water at the membrane; red blood cell in a beaker (with plant-cell comparison); water potential calculator (**required for Honors, optional for others**) | Practice / Honors |
 | 5 Causal Chain | Order 6 cards and reject 5 misconception and false-clue cards; feedback distinguishes wrong order from a missing link | Check |
-| 6 Treatment | Choose fluid and dose, predict, watch the IV run, observe; can overcorrect; reflect | Check |
-| 7 Runner Case | New data, no simulation: flag values, explain collapse, rule out alternatives, choose treatment | Check (transfer) |
-| 8 Report | Copy, download, or print the report and submit to Canvas | |
+| 6 Treatment | Trials of up to 4 IV rounds: choose fluid and dose, predict, watch the IV, reassess; each trial is scored (seizures stopped, safe first-day rise, no harmful fluid); move on after a safe stabilization or 3 trials; reflect | Check |
+| 7 Report | Copy, download, or print the report and submit to Canvas | |
 
 - **Submission:** students click **Copy report** and paste it into a Canvas text entry, or upload the downloaded `.txt`. The report records first attempts (first lab-flag score, first chain attempt, each treatment prediction, first runner treatment choice) as well as final answers.
 - **Privacy:** no accounts, analytics, or network requests. Work is saved in the student's browser (localStorage) and survives reloads on the same device. A student who switches devices starts over, so stay on one Chromebook.
 - **Accessibility:** keyboard-operable throughout (no drag-only interactions). Screen-reader labels on gauges, canvases, and charts. **Reduce motion** toggle (also follows the OS setting) stops the tremor animation, particle motion, and scrolling traces. No flashing content.
 - **Written answers** pass a local "did thinking happen?" check: real words, enough distinct words, sentences, no filler like `aaaa` or keyboard mashing, not just parroting the question, and at least one topic word. It is a speed bump, not a grader. Fluent nonsense still passes. A model-based check is planned for a later hosted (Replit) edition.
+- **Runner transfer case: hidden** (`ENABLE_RUNNER = false` in `src/content/case.ts`) because it previews the Marathon Runner performance task too closely. The planned replacement is a reverse-direction case (hypernatremia, e.g. drinking seawater).
 - Steps can be revisited in any order from the step bar. In-page buttons lead students through in order.
 
 ## Development

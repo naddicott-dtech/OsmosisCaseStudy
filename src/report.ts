@@ -1,6 +1,6 @@
 import {
   BRAIN_EXPLAIN, BRAIN_PREDICTION, CHAIN_CARDS, INTAKE_PROMPT, LAB_PROMPTS, LABS, MINILAB_PROMPTS, OUTCOME_TEXT,
-  REFLECT_PROMPT, RUNNER,
+  ENABLE_RUNNER, REFLECT_PROMPT, RUNNER,
 } from './content/case';
 import { FLUIDS } from './engine/physiology';
 import { VERDICT_TEXT } from './content/case';
@@ -80,6 +80,7 @@ export function buildReport(s: Saved): ReportSection[] {
     ],
   });
 
+  if (!ENABLE_RUNNER) return sections;
   const firstChoice = RUNNER.treatmentChoice.choices.find((c) => c.id === s.runnerChoice.first);
   const finalChoice = RUNNER.treatmentChoice.choices.find((c) => c.id === s.runnerChoice.current);
   sections.push({
@@ -118,6 +119,6 @@ export function progressList(s: Saved): Progress[] {
     { label: s.honors ? 'Mini-labs 1, 2 & 3 (Honors)' : 'Mini-labs 1 & 2', done: has(MINILAB_PROMPTS.membrane.id) && has(MINILAB_PROMPTS.cell.id) && (!s.honors || has(MINILAB_PROMPTS.psi.id)) },
     { label: 'Causal chain', done: s.chain.solved && has('chain_explain') },
     { label: 'Treatment trials and reflection', done: (s.trialResults.some((r) => r.summary.verdict === 'safe') || s.trialResults.length >= 3) && has(REFLECT_PROMPT.id) },
-    { label: 'Runner case', done: RUNNER.questions.every((q) => has(q.id)) && !!s.runnerChoice.current },
+    ...(ENABLE_RUNNER ? [{ label: 'Runner case', done: RUNNER.questions.every((q) => has(q.id)) && !!s.runnerChoice.current }] : []),
   ];
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { HEMOLYSIS_TEXT, OUTCOME_TEXT, REFLECT_PROMPT, TREAT_GOAL, TREAT_PREDICT_LABEL, VERDICT_TEXT } from '../../content/case';
+import { ENABLE_RUNNER, HEMOLYSIS_TEXT, OUTCOME_TEXT, REFLECT_PROMPT, TREAT_GOAL, TREAT_PREDICT_LABEL, VERDICT_TEXT } from '../../content/case';
 import {
   FLUIDS, MAX_ROUNDS, MODEL, classifyOutcome, createPatient, startInfusion, step, trialVerdict,
   type FluidId, type Outcome, type PhysState,
@@ -310,7 +310,7 @@ export function Treat() {
         <section class="panel">
           <Prompt id={REFLECT_PROMPT.id} label={REFLECT_PROMPT.label} rows={4} tag="Check" />
           {!anySafe && <p class="muted small">You haven't stabilized Juniper safely yet. You can keep trying new trials, or move on.</p>}
-          <button class="primary" disabled={!answered(REFLECT_PROMPT.id)} onClick={() => goTo(6)}>Try a new patient: the marathon runner →</button>
+          <button class="primary" disabled={!answered(REFLECT_PROMPT.id)} onClick={() => goTo(6)}>{ENABLE_RUNNER ? 'Try a new patient: the marathon runner →' : 'Finish and make my report →'}</button>
         </section>
       )}
     </div>

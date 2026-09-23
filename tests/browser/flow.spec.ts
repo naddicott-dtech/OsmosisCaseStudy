@@ -148,20 +148,6 @@ test('a student can complete the whole case and export a report', async ({ page,
   await expect(page.getByRole('heading', { name: 'Trial 2: Stabilized safely' })).toBeVisible();
   await shot(page, '6-treat');
   await fill(page, /Explain why the treatment that worked/, ANSWERS.treatment);
-  await page.getByRole('button', { name: /marathon runner/ }).click();
-
-  // Runner
-  const rflags: Record<string, string> = { r_na: 'low', r_glu: 'normal', r_temp: 'normal', r_mass: 'high', r_hr: 'normal' };
-  for (const [id, f] of Object.entries(rflags)) await page.locator(`#run-${id}-${f}`).click();
-  await page.getByRole('button', { name: 'Check my flags' }).click();
-  await expect(page.getByText('All flags correct.')).toBeVisible();
-  await fill(page, /Explain the chain of events/, ANSWERS.runnerChain);
-  await fill(page, /Heat stroke and low blood sugar/, ANSWERS.ruleout);
-  await fill(page, /What can't these data tell us/, ANSWERS.unknown);
-  await page.getByLabel(/A sports drink/).check();
-  await expect(page.getByText(/still hypotonic to blood/)).toBeVisible();
-  await page.getByLabel(/100 mL\) of 3% hypertonic saline/).check();
-  await shot(page, '7-runner');
   await page.getByRole('button', { name: /Finish and make my report/ }).click();
 
   // Report
@@ -171,7 +157,7 @@ test('a student can complete the whole case and export a report', async ({ page,
   const reportText = await page.locator('#report-text').innerText();
   expect(reportText).toContain('D5W');
   expect(reportText).toContain('Trial 2 result (1 round): Stabilized safely');
-  expect(reportText).toContain('Treatment choice (first): A sports drink');
+  expect(reportText).not.toContain('Runner case');
   expect(reportText).toContain('Lab flags first check: 7/8');
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: /Download/ }).click();
@@ -242,7 +228,8 @@ test('filler answers are rejected', async ({ page }) => {
 
 test('no horizontal page scroll', async ({ page }) => {
   await page.goto('./');
-  for (let i = 0; i < 8; i++) {
+  const n = await page.locator('.stepper button').count();
+  for (let i = 0; i < n; i++) {
     await page.locator('.stepper button').nth(i).click();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `step ${i + 1}`).toBeLessThanOrEqual(1);

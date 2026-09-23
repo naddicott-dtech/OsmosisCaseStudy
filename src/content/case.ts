@@ -186,6 +186,12 @@ export const HEMOLYSIS_TEXT =
 
 // ---------- Runner transfer case ----------
 
+/**
+ * Hidden for now (Neal, 2026-09-23): it previews the Marathon Runner performance task too closely.
+ * A reverse-direction transfer case (hypernatremia, e.g. drinking seawater) is the planned replacement.
+ */
+export const ENABLE_RUNNER = false;
+
 export const RUNNER = {
   intro:
     'Race day. Runner #214, age 34, finished a marathon in 5 hours 40 minutes. They stopped at every water station and drank extra "to be safe." Twenty minutes after finishing they became confused, complained of a headache and nausea, and had a seizure in the medical tent.',

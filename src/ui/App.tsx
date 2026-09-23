@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
-import { PATIENT } from '../content/case';
+import { ENABLE_RUNNER, PATIENT } from '../content/case';
 import { progressList } from '../report';
 import { saved, update, goTo } from '../state';
 import { About } from './About';
@@ -12,7 +12,7 @@ import { Report } from './screens/Report';
 import { Runner } from './screens/Runner';
 import { Treat } from './screens/Treat';
 
-export const STEPS = [
+export const STEPS = ([
   { title: 'Intake', heading: 'Intake: meet your patient', C: Intake },
   { title: 'Exam & Labs', heading: 'Exam and lab results', C: Exam },
   { title: 'Inside the Brain', heading: 'Inside the brain', C: Brain },
@@ -21,7 +21,7 @@ export const STEPS = [
   { title: 'Treatment', heading: 'Treat Juniper', C: Treat },
   { title: 'Runner Case', heading: 'Transfer: the marathon runner', C: Runner },
   { title: 'Report', heading: 'Your report', C: Report },
-];
+]).filter((st) => ENABLE_RUNNER || st.C !== Runner);
 
 export function App() {
   const s = saved.value;
