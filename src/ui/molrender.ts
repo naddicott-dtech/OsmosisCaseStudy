@@ -8,7 +8,7 @@ import { RADIUS, type Kind, type Particle, type World } from '../engine/membrane
 
 export const COLORS = {
   oxygen: '#e0452e',
-  hydrogen: '#f4f4f4',
+  hydrogen: '#a9afb8',
   na: '#7b61d9',
   cl: '#44b863',
   k: '#e8923a',
@@ -84,10 +84,12 @@ export function sprites(kind: Kind, scale: number, dpr: number): SpriteSet {
     const ctx = c.getContext('2d') as CanvasRenderingContext2D;
     const a = (i / n) * Math.PI * 2;
     if (kind === 'water') {
+      // "Mickey Mouse" water: grey hydrogens drawn on top of the red oxygen (104.5° apart) so
+      // they stay visible at small sizes and against the pale water fill.
       const hr = R * 0.55;
-      const d = R * 0.95;
-      for (const off of [-0.91, 0.91]) sphere(ctx, half + Math.cos(a + off) * d, half + Math.sin(a + off) * d, hr, COLORS.hydrogen);
+      const d = R * 0.85;
       sphere(ctx, half, half, R, COLORS.oxygen);
+      for (const off of [-0.91, 0.91]) sphere(ctx, half + Math.cos(a + off) * d, half + Math.sin(a + off) * d, hr, COLORS.hydrogen);
     } else if (kind === 'o2') {
       const d = R * 0.6;
       sphere(ctx, half - Math.cos(a) * d, half - Math.sin(a) * d, R * 0.8, COLORS.oxygen);
