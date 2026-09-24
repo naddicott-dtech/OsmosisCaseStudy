@@ -12,7 +12,7 @@ This is the single source of truth for status, decisions, and next work on this 
 | Salmon case | **Planned, not started** (§4) |
 | Analytics / hosted edition | Deferred (§5) |
 | Canvas | No changes made. Neal creates the assignment, and students paste or upload their report |
-| Classroom observations | None recorded yet. Add them under §6 after use; don't assume how it went |
+| Classroom observations | First period 2026-09-24 (§6) |
 
 ## 2. Decisions log
 
@@ -33,6 +33,7 @@ Teacher decisions (Neal) are marked **N**. Assistant defaults that Neal accepted
 - 2026-09-23 **N**: **Hide the runner page.** It previews the Marathon Runner performance task (PT) too closely, like the previous unit's "mad libs" scaffold.
 - 2026-09-23 **N**: The next case is **salmon osmoregulation**, as a separate page in this repo (§4). The reverse-hypernatremia idea is not used (hypernatremia in runners is real, but too close to the PT).
 - 2026-09-23 **N**: Both cases in one class period is too much. Salmon is offered from Juniper's report as a small optional link, not a required step.
+- 2026-09-24 **N**: Water molecules must read as H₂O, not "a red dot" (the top student request). Grey hydrogens now sit on top of the red oxygen ("Mickey Mouse"). Held off `main` while classes are mid-case.
 
 ## 3. What exists (Juniper case)
 
@@ -121,6 +122,8 @@ Flow: Intake → Exam & Labs → Inside the Brain → Mini-labs → Causal Chain
 
 ## 6. Classroom observations
 _None yet. Record dated, teacher-reported observations here (what confused students, timing, bugs), kept separate from assistant interpretation._
+
+- 2026-09-24, first period: students read the water sprite as a single red dot (hydrogens were hidden). Writing a reason for every treatment round felt repetitive and frustrating, given how many rounds students try.
 
 ## 7. History and design rationale
 
