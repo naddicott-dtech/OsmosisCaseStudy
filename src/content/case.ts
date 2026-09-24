@@ -261,6 +261,7 @@ export const MINILAB_PROMPTS = {
     id: 'lab_cell',
     label: 'Describe what happened to the red blood cell in a hypotonic, isotonic, and hypertonic solution. Which one matches Juniper\'s brain cells?',
   },
+  /** Retired single prompt (before 2026-09-25). Still reported, and still counts, for students who answered it. */
   psi: {
     id: 'lab_psi',
     label: 'Use your water potential values to explain which way water moves between Juniper\'s blood and her brain cells.',
@@ -269,6 +270,37 @@ export const MINILAB_PROMPTS = {
 
 /** Several students wrote that Juniper's brain cells "burst" like the red blood cell. */
 export const CELL_VS_BRAIN_NOTE = 'Careful connecting this to Juniper: a red blood cell floating free can swell until it bursts. Brain cells are packed inside the skull, so they swell only a little before pressure builds. The danger for Juniper is that rising pressure, not bursting cells.';
+
+/** Honors water potential, in steps: one calculation per compartment, then a direction choice. */
+export const PSI_PROMPTS = {
+  blood: {
+    id: 'lab_psi_blood',
+    label: 'Calculate Ψs for Juniper\'s BLOOD. Write Ψs = −iCRT with her numbers plugged in, then your answer with units.',
+  },
+  cell: {
+    id: 'lab_psi_cell',
+    label: 'Calculate Ψs for her BRAIN CELLS the same way: numbers plugged in, then your answer with units.',
+  },
+  dir: {
+    id: 'lab_psi_dir',
+    firstId: 'lab_psi_dir_first',
+    label: 'Based on your two values, which way does water move?',
+    correct: 'blood_to_brain',
+    choices: [
+      { id: 'blood_to_brain', text: 'From her blood into her brain cells' },
+      { id: 'brain_to_blood', text: 'From her brain cells into her blood' },
+      { id: 'none', text: 'No net movement' },
+    ],
+    feedback: {
+      blood_to_brain: 'Yes. Her blood\'s Ψs is less negative (higher) than her brain cells\', and water moves from higher to lower water potential. That is why her brain cells swell.',
+      brain_to_blood: 'Check the signs. The MORE negative number is the LOWER water potential, and water moves toward the lower side. Which of your two values is more negative?',
+      none: 'Your two values are not equal. Compare them: which one is more negative? Water moves toward the more negative (lower) side.',
+    } as Record<string, string>,
+  },
+  signTip: 'Tip: solute potential is never positive. Check the minus sign in −iCRT.',
+  /** Juniper's values are fixed case data (her labs and exam), so every Honors answer can be checked. */
+  given: { tempC: 38.9, bloodM: 0.11, cellM: 0.145 },
+};
 
 // ---------- Treatment goal and trial verdicts ----------
 

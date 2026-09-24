@@ -53,6 +53,7 @@ Teacher decisions (Neal) are marked **N**. Assistant defaults that Neal accepted
   - The report prints the final chain. Students referred to links by number, which the report didn't show. The chain prompt now asks students to name the link in words.
   - After 10 unsuccessful chain checks, show: "It seems like you may be having some trouble with this activity. If you're working on this in class, your teacher would be happy to help." Wording is Neal's.
   - A cell-lab note says brain cells swell against the skull but don't burst like red blood cells. Four students wrote that her brain cells burst.
+- 2026-09-24 **N**: Honors water potential is split into three parts (branch `after-cohort`): a blood Ψs calculation, a brain-cell Ψs calculation, and a direction dropdown with a blank default. Juniper's values are a fixed table, so answers can be checked. The arrow calculator is now an optional sandbox that starts at non-Juniper values and doesn't affect grading. The worked example no longer uses Juniper's numbers. Earlier answers to the old single prompt still count. Later idea: a randomized practice problem with values that are easy to work with, like 27 °C (300 K) and multiples of 0.05 mol/L, recorded in the report.
 
 ## 3. What exists (Juniper case)
 

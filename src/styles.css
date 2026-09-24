@@ -141,10 +141,11 @@ button { font: inherit; }
 .danger { background: var(--bad); color: #fff; }
 .ghost.danger { background: transparent; color: var(--bad); border-color: var(--bad); }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
-textarea, input[type='number'] {
+textarea, input[type='number'], select {
   width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 0.5rem 0.6rem;
 }
 textarea { resize: vertical; }
+select { width: auto; max-width: 100%; }
 .prompt { margin: 0.8rem 0; }
 .prompt label { display: block; font-weight: 600; margin-bottom: 0.3rem; }
 .hint { color: var(--warn); }
@@ -185,6 +186,8 @@ legend { font-weight: 700; padding: 0 4px; }
 .findings { padding-left: 1.2rem; }
 .findings li { margin-bottom: 0.4rem; }
 .table-wrap { overflow-x: auto; }
+.given td { white-space: nowrap; }
+.sandbox { margin-top: 0.8rem; }
 table { border-collapse: collapse; width: 100%; }
 th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 thead th { font-size: 0.85rem; color: var(--muted); }

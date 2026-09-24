@@ -1,5 +1,5 @@
 import {
-  BRAIN_EXPLAIN, BRAIN_PREDICTION, CHAIN_CARDS, CHAIN_EXPLAIN_LABEL, INTAKE_PROMPT, LAB_PROMPTS, LABS, MINILAB_PROMPTS, OUTCOME_TEXT,
+  BRAIN_EXPLAIN, BRAIN_PREDICTION, CHAIN_CARDS, CHAIN_EXPLAIN_LABEL, INTAKE_PROMPT, LAB_PROMPTS, LABS, MINILAB_PROMPTS, OUTCOME_TEXT, PSI_PROMPTS,
   ENABLE_RUNNER, REFLECT_PROMPT, RUNNER,
 } from './content/case';
 import { FLUIDS } from './engine/physiology';
@@ -8,6 +8,12 @@ import type { Saved } from './state';
 import { assessAnswer, RULES } from './quality';
 
 const cardText = (id: string) => CHAIN_CARDS.find((c) => c.id === id)?.text ?? id;
+const psiChoice = (id: string | undefined) => PSI_PROMPTS.dir.choices.find((c) => c.id === id)?.text;
+
+/** Honors water potential is done: both calculations and a direction, or the retired single answer. */
+export function psiComplete(s: Saved, ok: (id: string) => boolean): boolean {
+  return (ok(PSI_PROMPTS.blood.id) && ok(PSI_PROMPTS.cell.id) && !!s.answers[PSI_PROMPTS.dir.id]) || ok(MINILAB_PROMPTS.psi.id);
+}
 
 export interface ReportSection {
   title: string;
@@ -51,7 +57,7 @@ export function buildReport(s: Saved): ReportSection[] {
       `Q: ${MINILAB_PROMPTS.membrane.label}`, `A: ${a(MINILAB_PROMPTS.membrane.id)}`,
       `Solutions observed in the cell lab: ${seen.join(', ') || 'none'}`,
       `Q: ${MINILAB_PROMPTS.cell.label}`, `A: ${a(MINILAB_PROMPTS.cell.id)}`,
-      ...(s.honors || s.answers[MINILAB_PROMPTS.psi.id]?.trim() ? [`${s.honors ? 'Honors' : 'Optional'} Q: ${MINILAB_PROMPTS.psi.label}`, `A: ${a(MINILAB_PROMPTS.psi.id)}`] : []),
+      ...psiLines(s, a),
     ],
   });
 
@@ -107,6 +113,26 @@ export function reportText(s: Saved): string {
   return [...head, ...buildReport(s).flatMap((sec) => [sec.title.toUpperCase(), ...sec.lines, ''])].join('\n');
 }
 
+function psiLines(s: Saved, a: (id: string) => string): string[] {
+  const tag = s.honors ? 'Honors' : 'Optional';
+  const legacy = s.answers[MINILAB_PROMPTS.psi.id]?.trim();
+  const started = [PSI_PROMPTS.blood.id, PSI_PROMPTS.cell.id, PSI_PROMPTS.dir.id].some((id) => s.answers[id]?.trim());
+  if (!s.honors && !legacy && !started) return [];
+  const dir = s.answers[PSI_PROMPTS.dir.id];
+  const first = s.answers[PSI_PROMPTS.dir.firstId];
+  const lines = legacy ? [`${tag} Q: ${MINILAB_PROMPTS.psi.label}`, `A: ${legacy}`] : [];
+  if (started || !legacy) {
+    lines.push(
+      `${tag} Q: ${PSI_PROMPTS.blood.label}`, `A: ${a(PSI_PROMPTS.blood.id)}`,
+      `${tag} Q: ${PSI_PROMPTS.cell.label}`, `A: ${a(PSI_PROMPTS.cell.id)}`,
+      `${tag} Q: ${PSI_PROMPTS.dir.label}`,
+      `A: ${psiChoice(dir) ?? '(no answer)'}${dir ? (dir === PSI_PROMPTS.dir.correct ? ' (correct)' : ' (not correct)') : ''}` +
+        (first && first !== dir ? `. First choice: ${psiChoice(first)}` : ''),
+    );
+  }
+  return lines;
+}
+
 export interface Progress {
   label: string;
   done: boolean;
@@ -118,7 +144,7 @@ export function progressList(s: Saved): Progress[] {
     { label: 'Intake hypothesis', done: has('intake_hypothesis') },
     { label: 'Lab flags and interpretation', done: s.labCheck.done && LAB_PROMPTS.every((p) => has(p.id)) },
     { label: 'Brain simulation and explanation', done: s.brainWatched && has(BRAIN_EXPLAIN.id) },
-    { label: s.honors ? 'Mini-labs 1, 2 & 3 (Honors)' : 'Mini-labs 1 & 2', done: has(MINILAB_PROMPTS.membrane.id) && has(MINILAB_PROMPTS.cell.id) && (!s.honors || has(MINILAB_PROMPTS.psi.id)) },
+    { label: s.honors ? 'Mini-labs 1, 2 & 3 (Honors)' : 'Mini-labs 1 & 2', done: has(MINILAB_PROMPTS.membrane.id) && has(MINILAB_PROMPTS.cell.id) && (!s.honors || psiComplete(s, has)) },
     { label: 'Causal chain', done: s.chain.solved && has('chain_explain') },
     { label: 'Treatment trials and reflection', done: (s.trialResults.some((r) => r.summary.verdict === 'safe') || s.trialResults.length >= 3) && has(REFLECT_PROMPT.id) },
     ...(ENABLE_RUNNER ? [{ label: 'Runner case', done: RUNNER.questions.every((q) => has(q.id)) && !!s.runnerChoice.current }] : []),

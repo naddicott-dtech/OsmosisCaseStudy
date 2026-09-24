@@ -98,6 +98,9 @@ export const RULES: Record<string, QualityOptions> = {
   lab_membrane: { minWords: 15, keywords: VOCAB.osmosis },
   lab_cell: { minWords: 15, keywords: ['hypotonic', 'isotonic', 'hypertonic', 'swell', 'shrink', 'burst', 'lys', 'water'] },
   lab_psi: { minWords: 12, keywords: ['potential', 'ψ', 'psi', 'bar', 'negative', 'higher', 'lower'] },
+  // Calculations: numbers count as words, so "−(2)(0.110)(0.0831)(312) = −5.70 bar" passes; a bare "−5.70" does not.
+  lab_psi_blood: { minWords: 4 },
+  lab_psi_cell: { minWords: 4 },
   chain_explain: { minWords: 15, keywords: VOCAB.osmosis },
   treat_reflect: { minWords: 15, keywords: VOCAB.treatment },
   treat_why: { minWords: 6, keywords: VOCAB.treatment },

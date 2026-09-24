@@ -95,7 +95,24 @@ test('a student can complete the whole case and export a report', async ({ page,
   await fill(page, /Describe what happened to the red blood cell/);
   await page.getByRole('tab', { name: /Water potential/ }).click();
   await expect(page.getByText(/Honors: required/).first()).toBeVisible();
-  await expect(page.getByText('from blood → into brain cells')).toBeVisible();
+  // Honors: two calculations, then a direction from a blank dropdown (readout hidden until chosen).
+  await page.getByLabel("I'm in Honors Biology").check();
+  await expect(page.getByRole('button', { name: /Build the causal chain/ })).toBeDisabled();
+  // Juniper's values are fixed; the arrow calculator is a separate sandbox that can't change grading.
+  await expect(page.getByRole('row', { name: /Blood \(NaCl-equivalent\) 0\.110 mol\/L/ })).toBeVisible();
+  await page.getByText('Calculator: try other values').click();
+  await page.getByLabel('Solution outside the cell (NaCl)').fill('0.3');
+  await expect(page.getByText('from the cell → outside')).toBeVisible();
+  await page.getByLabel(/Calculate Ψs for Juniper's BLOOD/).fill('Ψs = (2)(0.110)(0.0831)(312.05) = 5.70 bar');
+  await expect(page.getByText(/solute potential is never positive/)).toBeVisible();
+  await page.getByLabel(/Calculate Ψs for Juniper's BLOOD/).fill('Ψs = −(2)(0.110)(0.0831)(312.05) = −5.70 bar');
+  await expect(page.getByText(/solute potential is never positive/)).toHaveCount(0);
+  await page.getByLabel(/Calculate Ψs for her BRAIN CELLS/).fill('Ψs = −(2)(0.145)(0.0831)(312.05) = −7.52 bar');
+  await expect(page.getByLabel(/which way does water move/)).toHaveValue('');
+  await page.getByLabel(/which way does water move/).selectOption({ label: 'From her brain cells into her blood' });
+  await expect(page.getByText(/Check the signs/)).toBeVisible();
+  await page.getByLabel(/which way does water move/).selectOption({ label: 'From her blood into her brain cells' });
+  await expect(page.getByText(/That is why her brain cells swell/)).toBeVisible();
   await page.getByRole('button', { name: /Build the causal chain/ }).click();
 
   // Chain: include a distractor first.
@@ -165,6 +182,8 @@ test('a student can complete the whole case and export a report', async ({ page,
   expect(reportText).not.toContain('Runner case');
   expect(reportText).toContain('Lab flags first check: 7/8');
   expect(reportText).toContain('Final (solved) chain:');
+  expect(reportText).toContain('A: From her blood into her brain cells (correct). First choice: From her brain cells into her blood');
+  expect(reportText).toContain('= −7.52 bar');
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: /Download/ }).click();
   expect((await download).suggestedFilename()).toMatch(/osmosis-case-report-.*\.txt/);
@@ -217,9 +236,10 @@ test('mini-lab gate says what is missing and jumps to it (Honors)', async ({ pag
   await page.getByLabel("I'm in Honors Biology").check();
   const hint = page.locator('.gate-hint');
   await expect(hint).toContainText('Lab 1 explanation');
-  await expect(hint).toContainText('Lab 3 explanation (Honors)');
-  await hint.getByRole('button', { name: 'Lab 3 explanation (Honors)' }).click();
+  await expect(hint).toContainText('Lab 3 water potential (Honors)');
+  await hint.getByRole('button', { name: 'Lab 3 water potential (Honors)' }).click();
   await expect(page.getByRole('tab', { name: /Water potential/ })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByLabel(/Calculate Ψs for Juniper's BLOOD/)).toBeFocused();
 });
 
 test('after many unsuccessful chain checks, suggest asking the teacher', async ({ page }) => {

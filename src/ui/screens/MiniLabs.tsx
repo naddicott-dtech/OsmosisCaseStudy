@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { CELL_VS_BRAIN_NOTE, MINILAB_PROMPTS } from '../../content/case';
+import { CELL_VS_BRAIN_NOTE, MINILAB_PROMPTS, PSI_PROMPTS } from '../../content/case';
 import {
   addOxygen, createChamber, step, count, level, top, leftFace, rightFace, recent, setMode, PRESETS, CHAMBER,
   type World, type Mode, type Preset, type Side,
@@ -9,7 +9,8 @@ import {
   nacl_mOsm, tonicity, animalCellVolume, animalCellState, plantCellVolume, plantCellState, solutePotential,
   CELL_INSIDE_mOsm, RBC_LYSIS_RELATIVE_VOLUME,
 } from '../../engine/cells';
-import { saved, update, goTo } from '../../state';
+import { saved, update, goTo, setAnswer } from '../../state';
+import { psiComplete } from '../../report';
 import { Prompt, answered } from '../widgets';
 
 type Tab = 'membrane' | 'cell' | 'psi';
@@ -22,7 +23,8 @@ export function MiniLabs() {
     ['psi', '3 · Water potential (Honors)'],
   ];
   const honors = saved.value.honors;
-  const coreDone = answered(MINILAB_PROMPTS.membrane.id) && answered(MINILAB_PROMPTS.cell.id) && (!honors || answered(MINILAB_PROMPTS.psi.id));
+  const psiDone = psiComplete(saved.value, answered);
+  const coreDone = answered(MINILAB_PROMPTS.membrane.id) && answered(MINILAB_PROMPTS.cell.id) && (!honors || psiDone);
   return (
     <div class="stack">
       <div class="tabs" role="tablist" aria-label="Mini-labs">
@@ -53,9 +55,9 @@ export function MiniLabs() {
             {([
               ['membrane', 'Lab 1 explanation', answered(MINILAB_PROMPTS.membrane.id)],
               ['cell', 'Lab 2 explanation', answered(MINILAB_PROMPTS.cell.id)],
-              ...(honors ? [['psi', 'Lab 3 explanation (Honors)', answered(MINILAB_PROMPTS.psi.id)]] : []),
+              ...(honors ? [['psi', 'Lab 3 water potential (Honors)', psiDone]] : []),
             ] as [Tab, string, boolean][]).filter(([, , done]) => !done).map(([id, label], i) => (
-              <span key={id}>{i > 0 && ', '}<button onClick={() => { setTab(id); requestAnimationFrame(() => document.getElementById(`q-${MINILAB_PROMPTS[id].id}`)?.focus()); }}>{label}</button></span>
+              <span key={id}>{i > 0 && ', '}<button onClick={() => { setTab(id); requestAnimationFrame(() => document.getElementById(id === 'psi' ? firstPsiGap() : `q-${MINILAB_PROMPTS[id].id}`)?.focus()); }}>{label}</button></span>
             ))}
           </p>
         )}
@@ -414,19 +416,30 @@ function CellLab() {
 
 // ---------------- Water potential (extension) ----------------
 
+/** The first unfinished Honors step, for the gate hint to jump to. */
+function firstPsiGap(): string {
+  if (!answered(PSI_PROMPTS.blood.id)) return `q-${PSI_PROMPTS.blood.id}`;
+  if (!answered(PSI_PROMPTS.cell.id)) return `q-${PSI_PROMPTS.cell.id}`;
+  return 'psi-dir';
+}
+
+function chooseDirection(v: string) {
+  setAnswer(PSI_PROMPTS.dir.id, v);
+  if (v && !saved.value.answers[PSI_PROMPTS.dir.firstId]) setAnswer(PSI_PROMPTS.dir.firstId, v);
+}
+
+/** Calculations should come out negative; nudge (without blocking) when no minus sign is present. */
+function SignTip({ id }: { id: string }) {
+  const v = saved.value.answers[id]?.trim() ?? '';
+  return v && !/[−-]/.test(v) ? <p class="hint small">{PSI_PROMPTS.signTip}</p> : null;
+}
+
 function PsiLab() {
-  const [temp, setTemp] = useState(38.9);
-  const [bloodM, setBloodM] = useState(0.11);
-  const [cellM, setCellM] = useState(0.145);
-  const psiBlood = solutePotential(2, bloodM, temp);
-  const psiCell = solutePotential(2, cellM, temp);
-  const dir = Math.abs(psiBlood - psiCell) < 0.05 ? 'no net movement' : psiBlood > psiCell ? 'from blood → into brain cells' : 'from brain cells → into blood';
-  const num = (label: string, v: number, set: (n: number) => void, stepV: number, unit: string) => (
-    <label class="numfield">
-      {label}
-      <span><input type="number" step={stepV} value={v} onInput={(e) => { const n = parseFloat((e.target as HTMLInputElement).value); if (Number.isFinite(n) && n >= 0) set(n); }} /> {unit}</span>
-    </label>
-  );
+  const honors = saved.value.honors;
+  const chosen = saved.value.answers[PSI_PROMPTS.dir.id] ?? '';
+  // Students who answered the retired single prompt keep seeing (and getting credit for) it.
+  const legacy = !!saved.value.answers[MINILAB_PROMPTS.psi.id]?.trim();
+  const g = PSI_PROMPTS.given;
   return (
     <div class="grid2">
       <section class="panel">
@@ -436,26 +449,76 @@ function PsiLab() {
           <li><strong>i</strong> = ionization constant (NaCl splits into 2 ions, so i = 2)</li>
           <li><strong>C</strong> = molar concentration (mol/L)</li>
           <li><strong>R</strong> = 0.0831 L·bar/(mol·K)</li>
-          <li><strong>T</strong> = temperature in kelvin (°C + 273)</li>
+          <li><strong>T</strong> = temperature in kelvin (°C + 273.15)</li>
         </ul>
         <p class="small">Water moves from <strong>higher</strong> (less negative) water potential to <strong>lower</strong> (more negative) water potential.</p>
-        {num('Body temperature', temp, setTemp, 0.1, '°C')}
-        {num('Juniper\'s blood NaCl-equivalent', bloodM, setBloodM, 0.005, 'mol/L')}
-        {num('Brain cell solute (as NaCl-equivalent)', cellM, setCellM, 0.005, 'mol/L')}
-        <p class="muted small">Starting values: Juniper's blood sodium is about 0.110 mol/L. Brain cells still hold solute equal to about 0.145 mol/L. These are simplified, and real body fluids contain many solutes.</p>
+        <h4>Juniper's values</h4>
+        <div class="table-wrap">
+          <table class="given">
+            <tbody>
+              <tr><th scope="row">Body temperature</th><td>{g.tempC} °C</td></tr>
+              <tr><th scope="row">Blood (NaCl-equivalent)</th><td>{g.bloodM.toFixed(3)} mol/L</td></tr>
+              <tr><th scope="row">Brain cell solute (as NaCl-equivalent)</th><td>{g.cellM.toFixed(3)} mol/L</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted small">Her blood sodium is about 110 mEq/L, or 0.110 mol/L. Brain cells still hold solute equal to about 0.145 mol/L. These are simplified, and real body fluids contain many solutes.</p>
+        <details>
+          <summary>Show one worked example (not Juniper)</summary>
+          <p class="small">A 0.10 mol/L NaCl solution at 27 °C: Ψs = −(2)(0.10)(0.0831)(27 + 273.15) = {solutePotential(2, 0.1, 27).toFixed(2)} bar.</p>
+        </details>
+        <PsiSandbox />
       </section>
       <section class="panel">
-        <div class="readouts">
-          <div class="readout"><span class="readout-label">Ψs blood</span><span class="readout-value">{psiBlood.toFixed(2)} <small>bar</small></span></div>
-          <div class="readout"><span class="readout-label">Ψs brain cells</span><span class="readout-value">{psiCell.toFixed(2)} <small>bar</small></span></div>
-          <div class="readout"><span class="readout-label">Predicted net water movement</span><span class="readout-value small">{dir}</span></div>
+        {legacy && <Prompt id={MINILAB_PROMPTS.psi.id} label={MINILAB_PROMPTS.psi.label} rows={3} tag="Honors" optional />}
+        <Prompt id={PSI_PROMPTS.blood.id} label={PSI_PROMPTS.blood.label} rows={2} tag="Honors" optional={!honors} />
+        <SignTip id={PSI_PROMPTS.blood.id} />
+        <Prompt id={PSI_PROMPTS.cell.id} label={PSI_PROMPTS.cell.label} rows={2} tag="Honors" optional={!honors} />
+        <SignTip id={PSI_PROMPTS.cell.id} />
+        <div class="prompt">
+          <label for="psi-dir"><span class="purpose purpose-honors">Honors</span> {PSI_PROMPTS.dir.label}</label>
+          <select id="psi-dir" value={chosen} onChange={(e) => chooseDirection((e.target as HTMLSelectElement).value)}>
+            <option value="">Choose one…</option>
+            {PSI_PROMPTS.dir.choices.map((c) => <option key={c.id} value={c.id}>{c.text}</option>)}
+          </select>
+          {chosen && (
+            <p class={`callout ${chosen === PSI_PROMPTS.dir.correct ? 'good' : 'warn'}`} role="status">{PSI_PROMPTS.dir.feedback[chosen]}</p>
+          )}
         </div>
-        <details>
-          <summary>Show one worked example</summary>
-          <p class="small">Blood: Ψs = −(2)(0.110)(0.0831)(38.9 + 273.15) = {solutePotential(2, 0.11, 38.9).toFixed(2)} bar.</p>
-        </details>
-        <Prompt id={MINILAB_PROMPTS.psi.id} label={MINILAB_PROMPTS.psi.label} rows={3} tag="Honors" optional={!saved.value.honors} />
       </section>
     </div>
+  );
+}
+
+/**
+ * Optional calculator for exploring other values. It deliberately starts away from Juniper's numbers,
+ * and the graded questions always use her fixed values, so changing these can't make an answer "wrong".
+ */
+function PsiSandbox() {
+  const [temp, setTemp] = useState(27);
+  const [outM, setOutM] = useState(0.1);
+  const [inM, setInM] = useState(0.2);
+  const psiOut = solutePotential(2, outM, temp);
+  const psiIn = solutePotential(2, inM, temp);
+  const dir = Math.abs(psiOut - psiIn) < 0.05 ? 'no net movement' : psiOut > psiIn ? 'from outside → into the cell' : 'from the cell → outside';
+  const num = (label: string, v: number, set: (n: number) => void, stepV: number, unit: string) => (
+    <label class="numfield">
+      {label}
+      <span><input type="number" step={stepV} value={v} onInput={(e) => { const n = parseFloat((e.target as HTMLInputElement).value); if (Number.isFinite(n) && n >= 0) set(n); }} /> {unit}</span>
+    </label>
+  );
+  return (
+    <details class="sandbox">
+      <summary>Calculator: try other values (optional)</summary>
+      <p class="muted small">For exploring only. The questions use Juniper's values above.</p>
+      {num('Temperature', temp, setTemp, 0.1, '°C')}
+      {num('Solution outside the cell (NaCl)', outM, setOutM, 0.005, 'mol/L')}
+      {num('Inside the cell (as NaCl-equivalent)', inM, setInM, 0.005, 'mol/L')}
+      <div class="readouts">
+        <div class="readout"><span class="readout-label">Ψs outside</span><span class="readout-value">{psiOut.toFixed(2)} <small>bar</small></span></div>
+        <div class="readout"><span class="readout-label">Ψs inside the cell</span><span class="readout-value">{psiIn.toFixed(2)} <small>bar</small></span></div>
+        <div class="readout"><span class="readout-label">Net water movement</span><span class="readout-value small">{dir}</span></div>
+      </div>
+    </details>
   );
 }
