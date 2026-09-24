@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { ENABLE_RUNNER, HEMOLYSIS_TEXT, OUTCOME_TEXT, REFLECT_PROMPT, TREAT_GOAL, TREAT_GOAL_MET, TREAT_GOAL_MET_TRIES, TREAT_PREDICT_LABEL, VERDICT_TEXT } from '../../content/case';
+import { ENABLE_RUNNER, HEMOLYSIS_TEXT, OUTCOME_TEXT, REFLECT_PROMPT, TREAT_GOAL, TREAT_GOAL_MET, TREAT_GOAL_MET_TRIES, TREAT_PREDICT_LABEL, TREAT_WHY_OPTIONAL_HINT, TREAT_WHY_REQUIRED, VERDICT_TEXT } from '../../content/case';
 import {
   FLUIDS, MAX_ROUNDS, MODEL, classifyOutcome, createPatient, startInfusion, step, trialVerdict,
   type FluidId, type Outcome, type PhysState,
@@ -35,7 +35,10 @@ export function Treat() {
   const runRef = useRef<{ before: PhysState; endAt: number; cur: PhysState } | null>(null);
 
   const whyCheck = assessAnswer(why, RULES.treat_why);
-  const canOrder = !!fluid && !!volume && !!effect && whyCheck.ok && !running;
+  // Reasons are required for the first few orders; after that, repeated rounds made them a chore.
+  const whyOptional = s.treatments.length >= TREAT_WHY_REQUIRED;
+  const whyOk = whyOptional || whyCheck.ok;
+  const canOrder = !!fluid && !!volume && !!effect && whyOk && !running;
 
   const finish = (after: PhysState) => {
     const run = runRef.current;
@@ -240,11 +243,12 @@ export function Treat() {
                 <span>{e.text}</span>
               </label>
             ))}
-            <label for="treat-why" class="sr-only">Explain your prediction</label>
-            <textarea id="treat-why" rows={2} placeholder="Because…" value={why}
+            <label for="treat-why" class="sr-only">Explain your prediction{whyOptional ? ' (optional)' : ''}</label>
+            <textarea id="treat-why" rows={2} placeholder={whyOptional ? 'Because… (optional)' : 'Because…'} value={why}
               onInput={(ev) => setWhy((ev.target as HTMLTextAreaElement).value)} />
-            <small class={whyCheck.ok ? 'hint ok' : 'hint'}>
-              {why.trim() ? (whyCheck.ok ? 'Ready.' : whyCheck.hint) : 'Explain your reasoning in a sentence.'}
+            <small class={whyCheck.ok || (whyOptional && !why.trim()) ? 'hint ok' : 'hint'}>
+              {why.trim() ? (whyCheck.ok ? 'Ready.' : whyOptional ? 'Optional. ' + whyCheck.hint : whyCheck.hint)
+                : whyOptional ? TREAT_WHY_OPTIONAL_HINT : 'Explain your reasoning in a sentence.'}
             </small>
           </fieldset>
           <div class="row">
@@ -253,7 +257,7 @@ export function Treat() {
             {running && <span class="clock">Infusing and observing… {(live.timeMin / 60).toFixed(1)} h</span>}
           </div>
           {!running && !canOrder && (
-            <p class="gate-hint">Still needed: {[!fluid && 'a fluid', !volume && 'an amount', !effect && 'a prediction', !whyCheck.ok && 'a reason for your prediction'].filter(Boolean).join(', ')}.</p>
+            <p class="gate-hint">Still needed: {[!fluid && 'a fluid', !volume && 'an amount', !effect && 'a prediction', !whyOk && 'a reason for your prediction'].filter(Boolean).join(', ')}.</p>
           )}
           </>)}
         </section>

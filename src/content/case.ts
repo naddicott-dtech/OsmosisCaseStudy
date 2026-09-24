@@ -246,6 +246,9 @@ export const TREAT_GOAL_MET = 'You\'ve met the goal for this step. To finish, an
 export const TREAT_GOAL_MET_TRIES = 'You\'ve done 3 trials, so you can finish now: answer the final question below. More trials are optional.';
 
 export const TREAT_PREDICT_LABEL = 'Before you start the IV: what do you predict will happen to the water in Juniper\'s brain, and why?';
+/** The written reason is required for this many IV orders (across all trials), then optional. */
+export const TREAT_WHY_REQUIRED = 2;
+export const TREAT_WHY_OPTIONAL_HINT = 'Optional from now on. Add a reason if your thinking has changed.';
 
 export const REFLECT_PROMPT = {
   id: 'treat_reflect',

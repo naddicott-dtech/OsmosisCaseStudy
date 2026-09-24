@@ -80,7 +80,7 @@ export function buildReport(s: Saved): ReportSection[] {
     lines: [
       ...(s.treatments.length
         ? s.treatments.map((t, i) =>
-            `Trial ${t.trial}, order ${i + 1}: ${FLUIDS[t.fluid].short}, ${t.volumeL} L. Predicted: ${t.predictedEffect === 'in' ? 'water into brain' : t.predictedEffect === 'out' ? 'water out of brain' : 'little change'}. Reason: "${t.prediction}". Result: ${OUTCOME_TEXT[t.outcome].title} (Na ${t.naBefore.toFixed(1)} → ${t.naAfter.toFixed(1)}).`)
+            `Trial ${t.trial}, order ${i + 1}: ${FLUIDS[t.fluid].short}, ${t.volumeL} L. Predicted: ${t.predictedEffect === 'in' ? 'water into brain' : t.predictedEffect === 'out' ? 'water out of brain' : 'little change'}. Reason: ${t.prediction ? `"${t.prediction}"` : '(optional, skipped)'}. Result: ${OUTCOME_TEXT[t.outcome].title} (Na ${t.naBefore.toFixed(1)} → ${t.naAfter.toFixed(1)}).`)
         : ['(no treatments given)']),
       ...s.trialResults.map((r) => `Trial ${r.trial} result (${r.rounds} round${r.rounds === 1 ? '' : 's'}): ${VERDICT_TEXT[r.summary.verdict].title}. Seizures stopped: ${r.summary.seizuresStopped ? 'yes' : 'no'}; first-day sodium rise ${r.summary.rise >= 0 ? '+' : ''}${r.summary.rise.toFixed(1)} mEq/L.`),
       `Q: ${REFLECT_PROMPT.label}`,

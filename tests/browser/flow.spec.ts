@@ -230,6 +230,33 @@ test('overcorrection ends a trial automatically', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Start IV/ })).toHaveCount(0);
 });
 
+test('the written treatment reason is required twice, then optional', async ({ page }) => {
+  await page.goto('./');
+  await page.locator('.stepper button').nth(5).click();
+  const order = async (reason: string | null) => {
+    await page.getByLabel(/Normal saline/).check();
+    await page.getByLabel('250 mL', { exact: true }).check();
+    await page.getByLabel(/Little or no change/).check();
+    if (reason === null) {
+      await expect(page.getByRole('button', { name: /Start IV/ })).toBeDisabled();
+      await expect(page.locator('.gate-hint')).toContainText('a reason for your prediction');
+      await page.getByLabel('Explain your prediction').fill('Because normal saline has about the same sodium as blood.');
+    }
+    await page.getByRole('button', { name: /Start IV/ }).click();
+    await page.getByRole('button', { name: 'Skip to result' }).click();
+    await page.getByRole('button', { name: /Give round/ }).click();
+  };
+  await order(null);
+  await order(null);
+  // Third order: the reason box is labeled optional and blank is fine.
+  await expect(page.getByLabel('Explain your prediction (optional)')).toHaveValue('');
+  await expect(page.getByText('Optional from now on')).toBeVisible();
+  await page.getByLabel(/Normal saline/).check();
+  await page.getByLabel('250 mL', { exact: true }).check();
+  await page.getByLabel(/Little or no change/).check();
+  await expect(page.getByRole('button', { name: /Start IV/ })).toBeEnabled();
+});
+
 test('mini-lab gate says what is missing and jumps to it (Honors)', async ({ page }) => {
   await page.goto('./');
   await page.locator('.stepper button').nth(3).click();
