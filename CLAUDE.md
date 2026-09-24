@@ -9,6 +9,7 @@ A static teaching web app for high school Biology: students treat Juniper, a cal
 - **This folder is its own git repo.** It sits inside a Biology curriculum workspace (the parent folder), which holds unrelated curriculum files and private student records. **Do not read, search, or modify anything outside this folder** unless Neal explicitly asks. The parent's AGENTS.md is about that curriculum workspace; for app work, this file is the guide. To avoid inheriting the parent context entirely, clone the repo somewhere else.
 - **The app collects no student data:** no accounts, analytics, or network calls. Answers stay in the browser's localStorage and students copy/download a text report into Canvas. Keep it that way unless Neal asks (a hosted Replit edition with analytics is a possible future step, needing its own privacy design).
 - **Pushing to `main` deploys to GitHub Pages** (public). Commit and push only when asked, or as part of an explicitly requested deploy. Never push student data or anything from the parent folder.
+- **Unreleased work is one straight line of commits:** `main` ── `ship-now` ── `after-cohort`. Deploy by fast-forwarding (`git push origin ship-now:main`), never by merging. See "Release workflow" in PLAN.md. Neal doesn't want to resolve merge conflicts, so the agent handles any rebasing.
 
 ## Commands
 
@@ -51,6 +52,7 @@ Vite + TypeScript + Preact + @preact/signals. Canvas 2D for molecules. No UI fra
   - D5W or sterile water → worse (sterile water also hemolysis).
 - **Originality:** the app is inspired by, but must not copy, ExploreLearning's "Osmosis" Gizmo (text, art, names). The molecule visuals credit Kodolab (kodolab.org), which is AGPL-3.0 code and CC BY-NC content. **Do not copy Kodolab code or images** unless Neal decides to relicense this repo under the AGPL.
 - **Playwright is pinned** to 1.58.2 to match the locally cached browsers. npm 11 can write a versionless `@napi-rs/lzma-linux-x64-gnu` entry into package-lock.json, which breaks `npm ci` on CI (npm 10). After any reinstall, strip lock entries without a `version`.
+- **CI runner change:** the deploy workflow uses `runs-on: ubuntu-latest`. GitHub is moving that label to Ubuntu 26 starting 2026-10-19 (actions/runner-images#14748). If a deploy fails after that date, check this first. Pinning `runs-on: ubuntu-24.04` in `.github/workflows/` is the quick fix.
 
 ## Working style Neal expects
 
