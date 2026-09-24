@@ -1,5 +1,5 @@
 import {
-  BRAIN_EXPLAIN, BRAIN_PREDICTION, CHAIN_CARDS, INTAKE_PROMPT, LAB_PROMPTS, LABS, MINILAB_PROMPTS, OUTCOME_TEXT,
+  BRAIN_EXPLAIN, BRAIN_PREDICTION, CHAIN_CARDS, CHAIN_EXPLAIN_LABEL, INTAKE_PROMPT, LAB_PROMPTS, LABS, MINILAB_PROMPTS, OUTCOME_TEXT,
   ENABLE_RUNNER, REFLECT_PROMPT, RUNNER,
 } from './content/case';
 import { FLUIDS } from './engine/physiology';
@@ -61,8 +61,10 @@ export function buildReport(s: Saved): ReportSection[] {
       `Solved: ${s.chain.solved ? 'yes' : 'no'} (checks: ${s.chain.attempts})`,
       'First attempt:',
       ...(s.chain.firstAttempt?.length ? s.chain.firstAttempt.map((id, i) => `  ${i + 1}. ${cardText(id)}`) : ['  (none)']),
-      ...(s.chain.solved ? [] : ['Current chain:', ...s.chain.current.map((id, i) => `  ${i + 1}. ${cardText(id)}`)]),
-      'Q: Explain the most important link in your own words.',
+      // Always print the final chain: students refer to links by number in their explanation.
+      `${s.chain.solved ? 'Final (solved) chain' : 'Current chain'}:`,
+      ...(s.chain.current.length ? s.chain.current.map((id, i) => `  ${i + 1}. ${cardText(id)}`) : ['  (none)']),
+      `Q: ${CHAIN_EXPLAIN_LABEL}`,
       `A: ${a('chain_explain')}`,
     ],
   });

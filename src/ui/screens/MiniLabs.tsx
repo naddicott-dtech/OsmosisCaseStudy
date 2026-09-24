@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { MINILAB_PROMPTS } from '../../content/case';
+import { CELL_VS_BRAIN_NOTE, MINILAB_PROMPTS } from '../../content/case';
 import {
   addOxygen, createChamber, step, count, level, top, leftFace, rightFace, recent, setMode, PRESETS, CHAMBER,
   type World, type Mode, type Preset, type Side,
@@ -405,6 +405,7 @@ function CellLab() {
           </tbody>
         </table>
         {seenAll && <p class="good">You found all three. Now connect them to Juniper.</p>}
+        {seenAll && <p class="callout small">{CELL_VS_BRAIN_NOTE}</p>}
         <Prompt id={MINILAB_PROMPTS.cell.id} label={MINILAB_PROMPTS.cell.label} rows={4} tag="Practice" />
       </section>
     </div>

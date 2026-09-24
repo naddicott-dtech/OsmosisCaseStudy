@@ -13,6 +13,19 @@ This is the single source of truth for status, decisions, and next work on this 
 | Analytics / hosted edition | Deferred (§5) |
 | Canvas | No changes made. Neal creates the assignment, and students paste or upload their report |
 | Classroom observations | First period 2026-09-24 (§6) |
+| Unreleased work | One line of commits, no merges. `ship-now` = safe fixes, ready to deploy. `after-cohort` = stacked on top, waits until this semester's cohort finishes. See "Release workflow" below |
+
+### Release workflow (decided 2026-09-24)
+
+Neal dislikes resolving merge conflicts, so unreleased work stays on **one straight line of commits**, ordered by when it should ship:
+
+```
+main (live) ── ship-now ── after-cohort
+```
+
+- **Deploy** by fast-forwarding `main` to a branch tip: `git push origin ship-now:main`. It never merges, so it can't conflict. If it's refused as non-fast-forward, stop and ask.
+- **New work** goes on the branch matching its risk: safe, high-value changes on `ship-now`, and quality-of-life changes on `after-cohort`. After committing to `ship-now`, rebase `after-cohort` onto it. The assistant resolves any conflicts; Neal shouldn't have to.
+- **While a cohort is mid-case**, ship only changes that are very likely safe, a big improvement, and don't change what students must do or how saved progress is stored.
 
 ## 2. Decisions log
 
@@ -34,6 +47,12 @@ Teacher decisions (Neal) are marked **N**. Assistant defaults that Neal accepted
 - 2026-09-23 **N**: The next case is **salmon osmoregulation**, as a separate page in this repo (§4). The reverse-hypernatremia idea is not used (hypernatremia in runners is real, but too close to the PT).
 - 2026-09-23 **N**: Both cases in one class period is too much. Salmon is offered from Juniper's report as a small optional link, not a required step.
 - 2026-09-24 **N**: Water molecules must read as H₂O, not "a red dot" (the top student request). Grey hydrogens now sit on top of the red oxygen ("Mickey Mouse"). Held off `main` while classes are mid-case.
+- 2026-09-24 **N**: Changes from reviewing the first period's 14 submissions (branch `ship-now`):
+  - Once the goal is met, the scorecard's main button goes to the final question, and another trial is labeled optional. Several students ran 4 to 7 trials after succeeding in trial 1.
+  - A round that lowers sodium is labeled "worse" or "setback", never "Seizures stop". D5W after stabilizing had been reported as a success.
+  - The report prints the final chain. Students referred to links by number, which the report didn't show. The chain prompt now asks students to name the link in words.
+  - After 10 unsuccessful chain checks, show: "It seems like you may be having some trouble with this activity. If you're working on this in class, your teacher would be happy to help." Wording is Neal's.
+  - A cell-lab note says brain cells swell against the skull but don't burst like red blood cells. Four students wrote that her brain cells burst.
 
 ## 3. What exists (Juniper case)
 

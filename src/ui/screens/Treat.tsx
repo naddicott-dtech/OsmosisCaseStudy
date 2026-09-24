@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { ENABLE_RUNNER, HEMOLYSIS_TEXT, OUTCOME_TEXT, REFLECT_PROMPT, TREAT_GOAL, TREAT_PREDICT_LABEL, VERDICT_TEXT } from '../../content/case';
+import { ENABLE_RUNNER, HEMOLYSIS_TEXT, OUTCOME_TEXT, REFLECT_PROMPT, TREAT_GOAL, TREAT_GOAL_MET, TREAT_GOAL_MET_TRIES, TREAT_PREDICT_LABEL, VERDICT_TEXT } from '../../content/case';
 import {
   FLUIDS, MAX_ROUNDS, MODEL, classifyOutcome, createPatient, startInfusion, step, trialVerdict,
   type FluidId, type Outcome, type PhysState,
@@ -188,7 +188,7 @@ export function Treat() {
               ))}
             </ol>
           </div>
-          {thisTrialResult && <TrialScorecard r={thisTrialResult} onNew={newTrial} />}
+          {thisTrialResult && <TrialScorecard r={thisTrialResult} onNew={newTrial} goalMet={canMoveOn ? (anySafe ? TREAT_GOAL_MET : TREAT_GOAL_MET_TRIES) : null} />}
           {!s.trialEnded && result && (
             <div class={`reassess outcome-${result.outcome.kind}`} role="status">
               <h4>Round {trialLogs.length} result: {OUTCOME_TEXT[result.outcome.kind].title}</h4>
@@ -307,7 +307,7 @@ export function Treat() {
       )}
 
       {canMoveOn && (
-        <section class="panel">
+        <section class="panel" id="treat-finish">
           <Prompt id={REFLECT_PROMPT.id} label={REFLECT_PROMPT.label} rows={4} tag="Check" />
           {!anySafe && <p class="muted small">You haven't stabilized Juniper safely yet. You can keep trying new trials, or move on.</p>}
           <button class="primary" disabled={!answered(REFLECT_PROMPT.id)} onClick={() => goTo(6)}>{ENABLE_RUNNER ? 'Try a new patient: the marathon runner →' : 'Finish and make my report →'}</button>
@@ -317,7 +317,14 @@ export function Treat() {
   );
 }
 
-function TrialScorecard({ r, onNew }: { r: TrialResult; onNew: () => void }) {
+const toFinish = () => {
+  const el = document.getElementById(`q-${REFLECT_PROMPT.id}`);
+  el?.scrollIntoView({ block: 'center', behavior: saved.value.reduceMotion ? 'auto' : 'smooth' });
+  el?.focus({ preventScroll: true });
+};
+
+/** Once the goal is met, finishing is the main action and another trial is the side option. */
+function TrialScorecard({ r, onNew, goalMet }: { r: TrialResult; onNew: () => void; goalMet: string | null }) {
   const v = VERDICT_TEXT[r.summary.verdict];
   const item = (ok: boolean, text: string) => <li class={ok ? 'ok' : 'bad'}><span aria-hidden="true">{ok ? '✓' : '✗'}</span> {text}</li>;
   return (
@@ -330,7 +337,11 @@ function TrialScorecard({ r, onNew }: { r: TrialResult; onNew: () => void }) {
       </ul>
       <p>{v.body}</p>
       {r.endedBy === 'max_rounds' && <p class="small muted">This trial used all {MAX_ROUNDS} rounds (about one day).</p>}
-      <button class="primary" onClick={onNew}>Start trial {r.trial + 1} with Juniper as she was at the start</button>
+      {goalMet && <p class="goal-met"><strong>{goalMet}</strong></p>}
+      <div class="row">
+        {goalMet && <button class="primary" onClick={toFinish}>Go to the final question ↓</button>}
+        <button class={goalMet ? 'secondary' : 'primary'} onClick={onNew}>Start trial {r.trial + 1} with Juniper as she was at the start{goalMet ? ' (optional)' : ''}</button>
+      </div>
     </div>
   );
 }

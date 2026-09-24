@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { cardById, evaluateChain, type ChainFeedback } from '../../chain';
+import { CHAIN_EXPLAIN_LABEL, CHAIN_HELP_AFTER, CHAIN_HELP_TEXT } from '../../content/case';
 import { saved, update, goTo } from '../../state';
 import { Prompt, answered } from '../widgets';
 
@@ -77,12 +78,13 @@ export function Chain() {
               {feedback.messages.map((m) => <p key={m}>{m}</p>)}
             </div>
           )}
+          {!s.chain.solved && s.chain.attempts >= CHAIN_HELP_AFTER && <p class="callout help" role="note">{CHAIN_HELP_TEXT}</p>}
         </section>
       </div>
       {s.chain.solved && (
         <section class="panel">
           <Prompt id="chain_explain" rows={4} tag="Check"
-            label="Pick the ONE link in the chain that you think is most important for explaining the seizures. Explain it in your own words, as if to the farmer." />
+            label={CHAIN_EXPLAIN_LABEL} />
           <button class="primary" disabled={!answered('chain_explain')} onClick={() => goTo(5)}>Treat Juniper →</button>
         </section>
       )}

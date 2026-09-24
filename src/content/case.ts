@@ -104,6 +104,11 @@ export interface ChainCard {
   misconception?: string;
 }
 
+export const CHAIN_EXPLAIN_LABEL = 'Pick the ONE link in the chain that you think is most important for explaining the seizures. Say which link it is in words (not just its number), then explain it in your own words, as if to the farmer.';
+/** After this many unsuccessful checks, suggest asking the teacher. */
+export const CHAIN_HELP_AFTER = 10;
+export const CHAIN_HELP_TEXT = 'It seems like you may be having some trouble with this activity. If you\'re working on this in class, your teacher would be happy to help.';
+
 export const CHAIN_CARDS: ChainCard[] = [
   { id: 'c1', order: 0, text: 'Diarrhea removes both water AND sodium from Juniper\'s body.' },
   { id: 'c2', order: 1, text: 'Trying to rehydrate her, the owner stops her milk (which contains salts) and gives her plain water instead. The water replaces lost fluid but not lost sodium.' },
@@ -162,6 +167,10 @@ export const OUTCOME_TEXT: Record<string, { title: string; body: string }> = {
   worse: {
     title: 'Worse: more water rushed into the brain',
     body: 'This fluid has no sodium, so it diluted Juniper\'s blood even more. Her blood became MORE hypotonic compared with her brain cells, so even more water moved into the brain by osmosis. Pressure rose.',
+  },
+  setback: {
+    title: 'Setback: water moved back INTO the brain',
+    body: 'Her seizures are still stopped for now, but this fluid lowered her blood sodium. Diluting the blood makes it more hypotonic compared with her brain cells, so water moves back INTO the brain by osmosis and pressure creeps up. A fluid with little or no sodium works against the treatment.',
   },
   no_help: {
     title: 'Little change',
@@ -232,6 +241,10 @@ export const BRAIN_EXPLAIN = {
   label: 'In your own words: why does more water move into the brain than out of it? Mention what could and could not cross the barrier.',
 };
 
+/** Shown with the trial scorecard once the student has met the goal (a safe trial, or 3 trials). */
+export const TREAT_GOAL_MET = 'You\'ve met the goal for this step. To finish, answer the final question below. More trials are optional.';
+export const TREAT_GOAL_MET_TRIES = 'You\'ve done 3 trials, so you can finish now: answer the final question below. More trials are optional.';
+
 export const TREAT_PREDICT_LABEL = 'Before you start the IV: what do you predict will happen to the water in Juniper\'s brain, and why?';
 
 export const REFLECT_PROMPT = {
@@ -253,6 +266,9 @@ export const MINILAB_PROMPTS = {
     label: 'Use your water potential values to explain which way water moves between Juniper\'s blood and her brain cells.',
   },
 };
+
+/** Several students wrote that Juniper's brain cells "burst" like the red blood cell. */
+export const CELL_VS_BRAIN_NOTE = 'Careful connecting this to Juniper: a red blood cell floating free can swell until it bursts. Brain cells are packed inside the skull, so they swell only a little before pressure builds. The danger for Juniper is that rising pressure, not bursting cells.';
 
 // ---------- Treatment goal and trial verdicts ----------
 

@@ -146,6 +146,11 @@ test('a student can complete the whole case and export a report', async ({ page,
   await expect(page.locator('svg.calf .iv')).toHaveCount(1);
   await page.getByRole('button', { name: 'End trial 2 here' }).click();
   await expect(page.getByRole('heading', { name: 'Trial 2: Stabilized safely' })).toBeVisible();
+  // Goal met: finishing is the main action; another trial is optional.
+  await expect(page.getByText(/You've met the goal for this step/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /Start trial 3 .*\(optional\)/ })).toHaveClass(/secondary/);
+  await page.getByRole('button', { name: /Go to the final question/ }).click();
+  await expect(page.getByLabel(/Explain why the treatment that worked/)).toBeFocused();
   await shot(page, '6-treat');
   await fill(page, /Explain why the treatment that worked/, ANSWERS.treatment);
   await page.getByRole('button', { name: /Finish and make my report/ }).click();
@@ -159,6 +164,7 @@ test('a student can complete the whole case and export a report', async ({ page,
   expect(reportText).toContain('Trial 2 result (1 round): Stabilized safely');
   expect(reportText).not.toContain('Runner case');
   expect(reportText).toContain('Lab flags first check: 7/8');
+  expect(reportText).toContain('Final (solved) chain:');
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: /Download/ }).click();
   expect((await download).suggestedFilename()).toMatch(/osmosis-case-report-.*\.txt/);
@@ -214,6 +220,18 @@ test('mini-lab gate says what is missing and jumps to it (Honors)', async ({ pag
   await expect(hint).toContainText('Lab 3 explanation (Honors)');
   await hint.getByRole('button', { name: 'Lab 3 explanation (Honors)' }).click();
   await expect(page.getByRole('tab', { name: /Water potential/ })).toHaveAttribute('aria-selected', 'true');
+});
+
+test('after many unsuccessful chain checks, suggest asking the teacher', async ({ page }) => {
+  await page.goto('./');
+  await page.locator('.stepper button').nth(4).click();
+  await page.getByRole('button', { name: /^Brain cells swell/ }).click();
+  await page.getByRole('button', { name: /^Diarrhea removes/ }).click();
+  const help = page.getByText(/your teacher would be happy to help/);
+  for (let i = 0; i < 9; i++) await page.getByRole('button', { name: 'Check my chain' }).click();
+  await expect(help).toHaveCount(0);
+  await page.getByRole('button', { name: 'Check my chain' }).click();
+  await expect(help).toBeVisible();
 });
 
 test('filler answers are rejected', async ({ page }) => {

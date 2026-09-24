@@ -97,6 +97,16 @@ describe('treatments', () => {
     s = step(startInfusion(s, 'saline_3', 0.25), 240);
     expect(classifyOutcome(before, s).kind).toBe('success');
   });
+  it('a sodium-lowering fluid after stabilizing is a setback, not a success', () => {
+    const stable = step(startInfusion(createPatient(), 'saline_3', 0.5), 360);
+    expect(['stable', 'healthy']).toContain(stable.status);
+    const after = step(startInfusion(stable, 'd5w', 0.25), 360);
+    expect(after.plasmaNa).toBeLessThan(stable.plasmaNa);
+    expect(classifyOutcome(stable, after).kind).toBe('setback');
+  });
+  it('even a small D5W dose while seizing is labeled worse', () => {
+    expect(treat('d5w', 0.25).outcome.kind).toBe('worse');
+  });
   it('1 L of 3% stops seizures but overcorrects', () => {
     const { after, outcome } = treat('saline_3', 1);
     expect(outcome.kind).toBe('overcorrected');

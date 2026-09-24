@@ -11,9 +11,10 @@ Written 2026-09-23. Numbers are chosen to be physiologically plausible for teach
 - **Brain water:** `dV/dt = K · (S/V − P_osm − E·(V − 1))`. S = 295 means a brain at Na 140 has V = 1. E = 700 represents tissue and skull resistance. K gives a time constant of about 10 min.
 - **Pressure inside the skull:** `ICP = 4 + exp(0.55 · swelling%)`, giving about 5 mmHg at Na 140 and about 33 mmHg at Na 110.
 - **Status:** seizing if ICP > 25; stable once ICP ≤ 20 (with hysteresis); "critical" if ICP > 40.
+- **Round labels:** a round that lowers plasma Na by more than 0.3 mEq/L is labeled "worse" (still seizing) or "setback" (still stable), never "seizures stop", so a small D5W dose after stabilizing isn't rewarded. Otherwise the label follows status and the pressure change.
 - **Overcorrection:** flagged if Na rises more than 10 mEq/L above its value at the start of the trial. Human guidance is ≤ 8–10 mEq/L in 24 h; a published calf case targeted 12 mmol/L/day. No calf-specific numeric limit was verified, so this is extrapolated.
 
-Verified outcomes (engine tests): untreated Na 110 → seizing. 1 L D5W or sterile water → worse. 1 L 0.9% saline → +1.3 mEq/L, still seizing. 250 mL 3% → partial. 500 mL 3% (or 2 × 250 mL) → seizures stop safely (+6.2). 1 L 3% → seizures stop but overcorrects (+12.4).
+Verified outcomes (engine tests): untreated Na 110 → seizing. 1 L D5W or sterile water → worse (so is 250 mL D5W). 250 mL D5W after stabilizing → setback. 1 L 0.9% saline → +1.3 mEq/L, still seizing. 250 mL 3% → partial. 500 mL 3% (or 2 × 250 mL) → seizures stop safely (+6.2). 1 L 3% → seizures stop but overcorrects (+12.4).
 
 ## Known simplifications (also shown in the in-app "About & model notes")
 

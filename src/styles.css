@@ -320,7 +320,7 @@ thead th { font-size: 0.85rem; color: var(--muted); }
 .outcome { border-width: 2px; }
 .outcome-success { border-color: var(--good); background: var(--good-soft); }
 .outcome-partial, .outcome-no_help { border-color: var(--warn); background: var(--warn-soft); }
-.outcome-worse, .outcome-overcorrected { border-color: var(--bad); background: var(--bad-soft); }
+.outcome-worse, .outcome-setback, .outcome-overcorrected { border-color: var(--bad); background: var(--bad-soft); }
 .log td { font-size: 0.9rem; }
 
 /* ---------- Report ---------- */
@@ -392,7 +392,7 @@ dialog.examcard::backdrop { background: rgba(0, 0, 0, 0.5); }
 .reassess, .scorecard { border: 2px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
 .reassess.outcome-success, .scorecard.verdict-safe { border-color: var(--good); background: var(--good-soft); }
 .reassess.outcome-partial, .reassess.outcome-no_help, .scorecard.verdict-not_stabilized { border-color: var(--warn); background: var(--warn-soft); }
-.reassess.outcome-worse, .reassess.outcome-overcorrected, .scorecard.verdict-overcorrected, .scorecard.verdict-harmed { border-color: var(--bad); background: var(--bad-soft); }
+.reassess.outcome-worse, .reassess.outcome-setback, .reassess.outcome-overcorrected, .scorecard.verdict-overcorrected, .scorecard.verdict-harmed { border-color: var(--bad); background: var(--bad-soft); }
 .checks { list-style: none; padding: 0; margin: 6px 0 10px; }
 .checks li { padding: 2px 0; }
 .checks li.ok span { color: var(--good); font-weight: 800; }

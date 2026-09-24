@@ -21,6 +21,8 @@ export const MODEL = {
   criticalAboveICP: 40,
   /** Rise in plasma Na (mEq/L) within 24 h beyond which osmotic demyelination risk is flagged. */
   maxSafeRise24h: 10,
+  /** A round that lowers plasma Na by more than this (mEq/L) is labeled worse/setback, never success. */
+  naFallWorse: 0.3,
   healthyNa: 140,
   initialNa: 110,
 } as const;
@@ -204,7 +206,7 @@ export function step(s: PhysState, dtMin: number, plasmaNaOverride?: number): Ph
   return st;
 }
 
-export type OutcomeKind = 'worse' | 'no_help' | 'partial' | 'success' | 'overcorrected';
+export type OutcomeKind = 'worse' | 'setback' | 'no_help' | 'partial' | 'success' | 'overcorrected';
 
 export interface Outcome {
   kind: OutcomeKind;
@@ -216,8 +218,12 @@ export function classifyOutcome(before: PhysState, after: PhysState): Outcome {
   const naChange = after.plasmaNa - before.plasmaNa;
   const icpChange = after.icp - before.icp;
   let kind: OutcomeKind;
+  const stable = after.status === 'stable' || after.status === 'healthy';
   if (after.overcorrected) kind = 'overcorrected';
-  else if (after.status === 'stable' || after.status === 'healthy') kind = 'success';
+  // A fluid that lowers blood sodium pulls water back into the brain, even if she is still out of
+  // the seizure range. Label it by direction so "Seizures stop" never rewards D5W.
+  else if (naChange < -MODEL.naFallWorse) kind = stable ? 'setback' : 'worse';
+  else if (stable) kind = 'success';
   else if (icpChange > 0.5) kind = 'worse';
   else if (icpChange < -2) kind = 'partial';
   else kind = 'no_help';
